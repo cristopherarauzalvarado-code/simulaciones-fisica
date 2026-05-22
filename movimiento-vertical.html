@@ -1,0 +1,466 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cinemática del Movimiento Vertical · Física I</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel-2: #273449; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8; --accent-2: #22c55e;
+    --danger: #f87171; --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(circle at 20% 0%, #16233f, var(--bg));
+    color: var(--text); min-height: 100vh; padding: 24px;
+  }
+  a { color: var(--accent); }
+  .topbar { max-width: 1100px; margin: 0 auto 16px; font-size: 0.9rem; }
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 { font-size: 1.6rem; font-weight: 600; }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; max-width: 1100px; margin: 0 auto; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .panel h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 8px; }
+  .field label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  select { width: 100%; padding: 10px; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-family: inherit; }
+  .hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  .buttons { display: flex; gap: 10px; margin-top: 8px; }
+  button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: transform 0.08s; }
+  button:active { transform: scale(0.96); }
+  .btn-play { background: var(--accent-2); color: #052e16; }
+  .btn-reset { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+
+  .stage-wrap { display: grid; gap: 20px; }
+  .readouts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .readout { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+  .readout span { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .readout b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+  .readout.up b { color: #86efac; } .readout.down b { color: #fca5a5; }
+
+  .derived { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .derived .readout span { color: #7dd3fc; }
+  .derived .readout b { font-size: 1.05rem; }
+
+  canvas { display: block; width: 100%; border-radius: 12px; background: var(--panel-2); }
+  .graphs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
+  @media (max-width: 760px) { .graphs { grid-template-columns: 1fr; } }
+  .graph-title { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
+
+  /* Teoría */
+  .theory { max-width: 1100px; margin: 28px auto 0; }
+  .theory .panel { padding: 28px; }
+  .theory h2 { font-size: 1.2rem; text-transform: none; letter-spacing: 0; color: var(--text); margin-bottom: 14px; }
+  .theory h3 { font-size: 1rem; color: var(--accent); margin: 22px 0 8px; }
+  .theory p { color: #cbd5e1; line-height: 1.7; margin-bottom: 12px; }
+  .theory ul { color: #cbd5e1; line-height: 1.7; margin: 0 0 12px 20px; }
+  .formula {
+    background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 14px 16px; margin: 12px 0; font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 0.95rem; overflow-x: auto;
+  }
+  .formula small { color: var(--muted); display: block; margin-top: 6px; font-family: inherit; }
+  code { background: var(--panel-2); padding: 2px 6px; border-radius: 5px; font-family: "SF Mono", ui-monospace, monospace; font-size: 0.88em; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+  table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.9rem; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+  th { color: var(--muted); font-weight: 600; }
+  td code { background: none; padding: 0; color: #7dd3fc; }
+</style>
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver a las simulaciones</a></div>
+
+  <header>
+    <h1>Cinemática del Movimiento <span>Vertical</span></h1>
+    <p>Física I · Ingeniería del Software — tiro vertical y caída libre bajo gravedad</p>
+  </header>
+
+  <div class="layout">
+    <!-- Controles -->
+    <aside class="panel">
+      <h2>Parámetros iniciales</h2>
+
+      <div class="field">
+        <label>Altura inicial · y₀ <b id="lblY0">0 m</b></label>
+        <input type="range" id="y0" min="0" max="100" value="0" step="1" />
+        <div class="hint">Posición desde la que parte el cuerpo.</div>
+      </div>
+
+      <div class="field">
+        <label>Velocidad inicial · v₀ <b id="lblV0">25 m/s</b></label>
+        <input type="range" id="v0" min="-30" max="40" value="25" step="1" />
+        <div class="hint">Positiva = lanzado hacia arriba · Negativa = hacia abajo · 0 = caída libre.</div>
+      </div>
+
+      <div class="field">
+        <label>Gravedad · g</label>
+        <select id="gSel">
+          <option value="9.81">Tierra · 9.81 m/s²</option>
+          <option value="1.62">Luna · 1.62 m/s²</option>
+          <option value="3.71">Marte · 3.71 m/s²</option>
+          <option value="24.79">Júpiter · 24.79 m/s²</option>
+          <option value="8.87">Venus · 8.87 m/s²</option>
+        </select>
+        <div class="hint">La aceleración apunta siempre hacia abajo (−g).</div>
+      </div>
+
+      <div class="field">
+        <label>Velocidad de animación <b id="lblSpeed">1.0×</b></label>
+        <input type="range" id="speed" min="0.1" max="2" value="0.6" step="0.1" />
+      </div>
+
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Iniciar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <!-- Escenario -->
+    <section class="stage-wrap">
+      <!-- Datos en tiempo real -->
+      <div class="readouts">
+        <div class="readout"><span>Tiempo t</span><b id="outT">0.00 s</b></div>
+        <div class="readout"><span>Altura y</span><b id="outY">0.0 m</b></div>
+        <div class="readout" id="rdV"><span>Velocidad v</span><b id="outV">0.0 m/s</b></div>
+        <div class="readout"><span>Aceleración a</span><b id="outAcc">−9.8 m/s²</b></div>
+      </div>
+
+      <!-- Datos calculados -->
+      <div class="panel">
+        <h2>Datos calculados del lanzamiento</h2>
+        <div class="derived">
+          <div class="readout"><span>Altura máx · y_máx</span><b id="outYmax">—</b></div>
+          <div class="readout"><span>t de subida</span><b id="outTup">—</b></div>
+          <div class="readout"><span>t de vuelo total</span><b id="outTfly">—</b></div>
+          <div class="readout"><span>v de impacto</span><b id="outVimp">—</b></div>
+        </div>
+      </div>
+
+      <div class="panel"><canvas id="stage" width="700" height="380"></canvas></div>
+
+      <div class="panel graphs">
+        <div>
+          <div class="graph-title">Posición y–t (parábola)</div>
+          <canvas id="gPos" width="300" height="190"></canvas>
+        </div>
+        <div>
+          <div class="graph-title">Velocidad v–t (recta)</div>
+          <canvas id="gVel" width="300" height="190"></canvas>
+        </div>
+        <div>
+          <div class="graph-title">Aceleración a–t (constante)</div>
+          <canvas id="gAcc" width="300" height="190"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== TEORÍA ===================== -->
+  <section class="theory">
+    <div class="panel">
+      <h2>La cinemática del movimiento vertical</h2>
+      <p>
+        El movimiento vertical es el caso del <strong>movimiento rectilíneo uniformemente acelerado
+        (MRUV)</strong> en el que la única aceleración es la de la <strong>gravedad</strong>.
+        Despreciando la resistencia del aire, todo cuerpo cerca de la superficie sufre una
+        aceleración constante <code>g</code> dirigida hacia el centro de la Tierra. Tomando el eje
+        <code>y</code> positivo hacia arriba, esa aceleración es <strong>negativa</strong>:
+      </p>
+      <div class="formula">
+        a(t) = −g          (g = 9.81 m/s² en la Tierra)
+        <small>Constante: no depende del tiempo, de la masa ni de la velocidad del cuerpo.</small>
+      </div>
+
+      <h3>Parámetros iniciales</h3>
+      <table>
+        <tr><th>Símbolo</th><th>Significado</th><th>Convención</th></tr>
+        <tr><td><code>y₀</code></td><td>Altura inicial</td><td>Desde dónde parte (m)</td></tr>
+        <tr><td><code>v₀</code></td><td>Velocidad inicial</td><td>+ hacia arriba, − hacia abajo (m/s)</td></tr>
+        <tr><td><code>g</code></td><td>Gravedad</td><td>Magnitud de la aceleración (m/s²)</td></tr>
+        <tr><td><code>t</code></td><td>Tiempo</td><td>Variable independiente (s)</td></tr>
+      </table>
+
+      <h3>Las tres ecuaciones del movimiento</h3>
+      <p>Integrando la aceleración constante respecto al tiempo se obtienen la velocidad y la posición:</p>
+      <div class="formula">
+        y(t) = y₀ + v₀·t − ½·g·t²      ← posición
+        v(t) = v₀ − g·t                ← velocidad
+        a(t) = −g                      ← aceleración
+      </div>
+      <p>
+        Existe además una ecuación que <em>no</em> depende del tiempo, muy útil para relacionar
+        velocidad y altura directamente (ecuación de Torricelli):
+      </p>
+      <div class="formula">v² = v₀² − 2·g·(y − y₀)</div>
+
+      <div class="grid2">
+        <div>
+          <h3>Subida: altura máxima</h3>
+          <p>
+            En el punto más alto la velocidad se anula (<code>v = 0</code>). Igualando
+            <code>v(t) = v₀ − g·t = 0</code> obtenemos el tiempo de subida y, sustituyendo,
+            la altura máxima:
+          </p>
+          <div class="formula">
+            t_subida = v₀ / g
+            y_máx = y₀ + v₀² / (2g)
+          </div>
+        </div>
+        <div>
+          <h3>Bajada: vuelo e impacto</h3>
+          <p>
+            El cuerpo toca el suelo cuando <code>y(t) = 0</code>. Resolviendo la ecuación
+            cuadrática se obtiene el tiempo total de vuelo y la velocidad de impacto:
+          </p>
+          <div class="formula">
+            t_vuelo = [v₀ + √(v₀² + 2·g·y₀)] / g
+            |v_impacto| = √(v₀² + 2·g·y₀)
+          </div>
+        </div>
+      </div>
+
+      <h3>Cómo leer las gráficas</h3>
+      <ul>
+        <li><strong>y–t</strong>: una <em>parábola</em>. Sube, alcanza el vértice (altura máxima) y baja. La pendiente de la curva es la velocidad.</li>
+        <li><strong>v–t</strong>: una <em>recta</em> de pendiente <code>−g</code>. Cruza el cero justo en el instante de altura máxima; la pendiente constante refleja la aceleración.</li>
+        <li><strong>a–t</strong>: una <em>línea horizontal</em> en <code>−g</code>. La aceleración nunca cambia durante todo el vuelo.</li>
+      </ul>
+      <p>
+        Cambia la gravedad (Luna, Marte…) y observa cómo el mismo lanzamiento alcanza más altura y
+        tarda más en caer cuando <code>g</code> es menor: la física es la misma, solo cambia la
+        constante.
+      </p>
+    </div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+
+  const state = {
+    y0: 0, v0: 25, g: 9.81, speed: 0.6,
+    t: 0, running: false, lastTs: null,
+    tFly: 0, tUp: 0, yMax: 0, vImp: 0,
+  };
+
+  // Cinemática
+  const yAt = (t) => state.y0 + state.v0 * t - 0.5 * state.g * t * t;
+  const vAt = (t) => state.v0 - state.g * t;
+  const aAt = () => -state.g;
+
+  function computeDerived() {
+    const { y0, v0, g } = state;
+    state.tUp = v0 > 0 ? v0 / g : 0;
+    state.yMax = v0 > 0 ? y0 + (v0 * v0) / (2 * g) : y0;
+    // y(t)=0  →  -½g t² + v0 t + y0 = 0
+    const disc = v0 * v0 + 2 * g * y0;
+    state.tFly = (v0 + Math.sqrt(Math.max(disc, 0))) / g;
+    if (state.tFly <= 0) state.tFly = 0.01;
+    state.vImp = vAt(state.tFly); // negativa (hacia abajo)
+  }
+
+  // Inputs
+  const y0El = $("y0"), v0El = $("v0"), gSel = $("gSel"), speedEl = $("speed");
+  const lblY0 = $("lblY0"), lblV0 = $("lblV0"), lblSpeed = $("lblSpeed");
+  const outT = $("outT"), outY = $("outY"), outV = $("outV"), outAcc = $("outAcc"), rdV = $("rdV");
+  const outYmax = $("outYmax"), outTup = $("outTup"), outTfly = $("outTfly"), outVimp = $("outVimp");
+  const playBtn = $("playBtn"), resetBtn = $("resetBtn");
+
+  const stage = $("stage"), sctx = stage.getContext("2d");
+  const gPos = $("gPos"), pctx = gPos.getContext("2d");
+  const gVel = $("gVel"), vctx = gVel.getContext("2d");
+  const gAcc = $("gAcc"), actx = gAcc.getContext("2d");
+
+  function syncInputs() {
+    state.y0 = +y0El.value; state.v0 = +v0El.value; state.g = +gSel.value; state.speed = +speedEl.value;
+    lblY0.textContent = state.y0 + " m";
+    lblV0.textContent = state.v0 + " m/s";
+    lblSpeed.textContent = state.speed.toFixed(1) + "×";
+    computeDerived();
+  }
+
+  [y0El, v0El, gSel].forEach((el) => el.addEventListener("input", () => { syncInputs(); reset(); }));
+  speedEl.addEventListener("input", syncInputs);
+
+  function reset() {
+    state.running = false; state.t = 0; state.lastTs = null;
+    playBtn.textContent = "▶ Iniciar"; render();
+  }
+  function toggle() {
+    if (state.running) { state.running = false; playBtn.textContent = "▶ Reanudar"; }
+    else {
+      if (state.t >= state.tFly) state.t = 0;
+      state.running = true; state.lastTs = null; playBtn.textContent = "❚❚ Pausar";
+      requestAnimationFrame(loop);
+    }
+  }
+  playBtn.addEventListener("click", toggle);
+  resetBtn.addEventListener("click", reset);
+
+  function loop(ts) {
+    if (!state.running) return;
+    if (state.lastTs === null) state.lastTs = ts;
+    const dt = ((ts - state.lastTs) / 1000) * state.speed;
+    state.lastTs = ts;
+    state.t += dt;
+    if (state.t >= state.tFly) { state.t = state.tFly; state.running = false; playBtn.textContent = "▶ Iniciar"; }
+    render();
+    if (state.running) requestAnimationFrame(loop);
+  }
+
+  function render() {
+    const t = state.t, v = vAt(t);
+    outT.textContent = t.toFixed(2) + " s";
+    outY.textContent = Math.max(0, yAt(t)).toFixed(1) + " m";
+    outV.textContent = v.toFixed(1) + " m/s";
+    outAcc.textContent = aAt().toFixed(2) + " m/s²";
+    rdV.className = "readout " + (v > 0.05 ? "up" : v < -0.05 ? "down" : "");
+
+    outYmax.textContent = state.yMax.toFixed(1) + " m";
+    outTup.textContent = (state.v0 > 0 ? state.tUp.toFixed(2) : "0.00") + " s";
+    outTfly.textContent = state.tFly.toFixed(2) + " s";
+    outVimp.textContent = state.vImp.toFixed(1) + " m/s";
+
+    drawStage(); drawPosGraph(); drawVelGraph(); drawAccGraph();
+  }
+
+  // --- Escenario ---
+  function drawStage() {
+    const W = stage.width, H = stage.height, padTop = 22, padBottom = 28;
+    const usableH = H - padTop - padBottom, trackX = W * 0.5;
+    const top = Math.max(state.yMax, 1) * 1.08; // metros visibles arriba
+    const yToPx = (m) => H - padBottom - (m / top) * usableH;
+    sctx.clearRect(0, 0, W, H);
+
+    // Escala
+    sctx.fillStyle = "#64748b"; sctx.font = "11px system-ui"; sctx.textAlign = "right";
+    sctx.strokeStyle = "#293548"; sctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const m = (i / 5) * top, py = yToPx(m);
+      sctx.beginPath(); sctx.moveTo(60, py); sctx.lineTo(W - 40, py); sctx.stroke();
+      sctx.fillText(m.toFixed(0) + " m", 55, py + 4);
+    }
+    // Suelo
+    sctx.strokeStyle = "#475569"; sctx.lineWidth = 2;
+    sctx.beginPath(); sctx.moveTo(40, yToPx(0)); sctx.lineTo(W - 40, yToPx(0)); sctx.stroke();
+
+    // Línea de altura máxima
+    sctx.strokeStyle = "rgba(251,191,36,0.5)"; sctx.setLineDash([5, 4]);
+    sctx.beginPath(); sctx.moveTo(60, yToPx(state.yMax)); sctx.lineTo(W - 40, yToPx(state.yMax)); sctx.stroke();
+    sctx.setLineDash([]);
+    sctx.fillStyle = "#fbbf24"; sctx.textAlign = "left"; sctx.font = "11px system-ui";
+    sctx.fillText("y_máx = " + state.yMax.toFixed(1) + " m", 64, yToPx(state.yMax) - 5);
+
+    const yNow = Math.max(0, yAt(state.t)), py = yToPx(yNow);
+
+    // Objeto
+    const grad = sctx.createRadialGradient(trackX - 4, py - 4, 2, trackX, py, 16);
+    grad.addColorStop(0, "#7dd3fc"); grad.addColorStop(1, "#0284c7");
+    sctx.beginPath(); sctx.arc(trackX, py, 14, 0, Math.PI * 2); sctx.fillStyle = grad; sctx.fill();
+    sctx.fillStyle = "#7dd3fc"; sctx.font = "italic 12px 'SF Mono', monospace"; sctx.textAlign = "left";
+    sctx.fillText("y(t)", trackX - 56, py + 4);
+
+    // Vector velocidad
+    const v = vAt(state.t), dir = Math.sign(v) || 1, len = Math.min(Math.abs(v) * 1.6, 70);
+    if (len > 2) {
+      const tipY = py - dir * len;
+      sctx.strokeStyle = v >= 0 ? "#22c55e" : "#f87171"; sctx.lineWidth = 3;
+      sctx.beginPath(); sctx.moveTo(trackX + 26, py); sctx.lineTo(trackX + 26, tipY); sctx.stroke();
+      sctx.beginPath(); sctx.moveTo(trackX + 26, tipY);
+      sctx.lineTo(trackX + 21, tipY + dir * 7); sctx.lineTo(trackX + 31, tipY + dir * 7);
+      sctx.closePath(); sctx.fillStyle = v >= 0 ? "#22c55e" : "#f87171"; sctx.fill();
+      sctx.fillStyle = v >= 0 ? "#86efac" : "#fca5a5";
+      sctx.font = "italic 12px 'SF Mono', monospace";
+      sctx.fillText("v⃗", trackX + 36, (py + tipY) / 2);
+    }
+
+    // Vector aceleración (siempre hacia abajo)
+    sctx.strokeStyle = "#fbbf24"; sctx.lineWidth = 2;
+    sctx.beginPath(); sctx.moveTo(trackX - 26, py - 24); sctx.lineTo(trackX - 26, py + 6); sctx.stroke();
+    sctx.beginPath(); sctx.moveTo(trackX - 26, py + 6);
+    sctx.lineTo(trackX - 31, py - 1); sctx.lineTo(trackX - 21, py - 1); sctx.closePath();
+    sctx.fillStyle = "#fbbf24"; sctx.fill();
+    sctx.fillStyle = "#fcd34d"; sctx.font = "italic 11px 'SF Mono', monospace"; sctx.textAlign = "right";
+    sctx.fillText("g", trackX - 34, py - 8);
+  }
+
+  // --- Gráficas ---
+  function axes(ctx, w, h, xl, yl) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = "#334155"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(40, 8); ctx.lineTo(40, h - 24); ctx.lineTo(w - 8, h - 24); ctx.stroke();
+    ctx.fillStyle = "#64748b"; ctx.font = "10px system-ui";
+    ctx.textAlign = "right"; ctx.fillText(yl, 36, 14);
+    ctx.textAlign = "left"; ctx.fillText(xl, w - 40, h - 10);
+  }
+
+  function plot(ctx, w, h, fn, color, vmin, vmax, label) {
+    const x0 = 40, ybase = h - 24, plotW = w - 48, plotH = h - 32, top = 8;
+    const T = state.tFly;
+    const xT = (t) => x0 + (t / T) * plotW;
+    const yV = (val) => top + (1 - (val - vmin) / (vmax - vmin)) * plotH;
+    // línea cero
+    if (vmin < 0 && vmax > 0) {
+      ctx.strokeStyle = "#334155"; ctx.setLineDash([4, 4]);
+      ctx.beginPath(); ctx.moveTo(x0, yV(0)); ctx.lineTo(w - 8, yV(0)); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // curva
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+    const N = 160;
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * T, px = xT(t), py = yV(fn(t));
+      i === 0 ? ctx.moveTo(px, py) : ctx.lineTo(px, py);
+    }
+    ctx.stroke();
+    // marcador de tiempo actual
+    ctx.strokeStyle = "#475569"; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(xT(state.t), top); ctx.lineTo(xT(state.t), ybase); ctx.stroke(); ctx.setLineDash([]);
+    // punto actual
+    ctx.fillStyle = color; ctx.beginPath(); ctx.arc(xT(state.t), yV(fn(state.t)), 4, 0, Math.PI * 2); ctx.fill();
+    // etiqueta
+    ctx.fillStyle = color; ctx.font = "italic 12px 'SF Mono', monospace"; ctx.textAlign = "left";
+    ctx.fillText(label, x0 + 6, 18);
+  }
+
+  function rangeOf(fn) {
+    let mn = Infinity, mx = -Infinity;
+    for (let i = 0; i <= 120; i++) { const v = fn((i / 120) * state.tFly); if (v < mn) mn = v; if (v > mx) mx = v; }
+    if (mx - mn < 1e-6) { mx += 1; mn -= 1; }
+    const p = (mx - mn) * 0.1; return [mn - p, mx + p];
+  }
+
+  function drawPosGraph() {
+    axes(pctx, gPos.width, gPos.height, "t (s)", "y (m)");
+    const [mn, mx] = rangeOf((t) => Math.max(0, yAt(t)));
+    plot(pctx, gPos.width, gPos.height, (t) => Math.max(0, yAt(t)), "#38bdf8", mn, mx, "y = y₀+v₀t−½gt²");
+  }
+  function drawVelGraph() {
+    axes(vctx, gVel.width, gVel.height, "t (s)", "v (m/s)");
+    const [mn, mx] = rangeOf(vAt);
+    plot(vctx, gVel.width, gVel.height, vAt, "#22c55e", mn, mx, "v = v₀ − g·t");
+  }
+  function drawAccGraph() {
+    axes(actx, gAcc.width, gAcc.height, "t (s)", "a (m/s²)");
+    plot(actx, gAcc.width, gAcc.height, aAt, "#fbbf24", -state.g - 2, 2, "a = −g");
+  }
+
+  // Inicio
+  syncInputs(); reset();
+})();
+</script>
+</body>
+</html>

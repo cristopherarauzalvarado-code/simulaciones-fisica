@@ -336,7 +336,18 @@
       sctx.closePath();
       sctx.fillStyle = "#22c55e";
       sctx.fill();
+      // etiqueta del vector
+      sctx.fillStyle = "#86efac";
+      sctx.font = "italic 13px 'SF Mono', monospace";
+      sctx.textAlign = "left";
+      sctx.fillText("v⃗", trackX + 36, (py + tipY) / 2);
     }
+
+    // Símbolo de la magnitud animada
+    sctx.fillStyle = "#7dd3fc";
+    sctx.font = "italic 13px 'SF Mono', monospace";
+    sctx.textAlign = "left";
+    sctx.fillText("y(t)", trackX - 56, py + 4);
   }
 
   // --- Gráficas ---
@@ -378,6 +389,25 @@
       i === 0 ? pctx.moveTo(px, py) : pctx.lineTo(px, py);
     });
     pctx.stroke();
+
+    // Anotaciones matemáticas
+    // Ecuación de la recta
+    pctx.fillStyle = "#7dd3fc";
+    pctx.font = "italic 13px 'SF Mono', ui-monospace, monospace";
+    pctx.textAlign = "left";
+    pctx.fillText("y(t) = y₀ + v·t", x0 + 8, 22);
+
+    // Marca de y₀ (ordenada al origen)
+    const yp0 = yY(state.y0);
+    pctx.fillStyle = "#fbbf24";
+    pctx.beginPath(); pctx.arc(x0, yp0, 3.5, 0, Math.PI * 2); pctx.fill();
+    pctx.font = "11px system-ui";
+    pctx.fillText("y₀ = " + state.y0, x0 + 6, yp0 - 6);
+
+    // Pendiente = v (símbolo del triángulo Δy/Δt)
+    pctx.fillStyle = "#94a3b8";
+    pctx.font = "italic 11px 'SF Mono', monospace";
+    pctx.fillText("pendiente = Δy/Δt = v = " + state.v + " m/s", x0 + 8, 38);
   }
 
   function drawVelGraph() {
@@ -406,6 +436,21 @@
     vctx.moveTo(xT(0), yV(state.v));
     vctx.lineTo(xT(state.t || tMax * 0.001), yV(state.v));
     vctx.stroke();
+
+    // Anotaciones matemáticas
+    vctx.fillStyle = "#86efac";
+    vctx.font = "italic 13px 'SF Mono', ui-monospace, monospace";
+    vctx.textAlign = "left";
+    vctx.fillText("v(t) = v = const.", x0 + 8, 22);
+
+    vctx.fillStyle = "#94a3b8";
+    vctx.font = "italic 11px 'SF Mono', monospace";
+    vctx.fillText("a(t) = dv/dt = 0  →  área = Δy = v·t", x0 + 8, 38);
+
+    // etiqueta sobre la línea de velocidad
+    vctx.fillStyle = "#22c55e";
+    vctx.font = "11px system-ui";
+    vctx.fillText("v = " + state.v + " m/s", w - 90, yV(state.v) - 6);
   }
 
   // --- Inicio ---

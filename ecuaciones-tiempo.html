@@ -60,6 +60,17 @@
   @media (max-width: 560px) { .graphs { grid-template-columns: 1fr; } }
   .graph-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
 
+  .formulas { display: grid; gap: 10px; }
+  .frow { display: grid; grid-template-columns: 92px 1fr; align-items: center; gap: 12px; }
+  .frow .flabel { font-size: 0.72rem; text-transform: uppercase; letter-spacing: 0.05em; color: var(--muted); }
+  .frow code {
+    font-family: "SF Mono", ui-monospace, monospace; font-size: 0.95rem; font-style: italic;
+    padding: 6px 10px; border-radius: 8px; border-left: 3px solid var(--accent); display: block;
+  }
+  .frow.pos code { color: #7dd3fc; border-left-color: #38bdf8; }
+  .frow.vel code { color: #86efac; border-left-color: #22c55e; }
+  .frow.acc code { color: #fcd34d; border-left-color: #fbbf24; }
+
   /* Teoría */
   .theory { max-width: 1100px; margin: 28px auto 0; }
   .theory .panel { padding: 28px; }
@@ -145,6 +156,13 @@
         <div class="readout"><span>Posición y(t)</span><b id="outY">0.0 m</b></div>
         <div class="readout"><span>Velocidad y'(t)</span><b id="outV">0.0 m/s</b></div>
         <div class="readout"><span>Aceleración y''(t)</span><b id="outAcc">0.0 m/s²</b></div>
+      </div>
+
+      <div class="panel formulas">
+        <h2 style="margin-bottom:4px">Ecuaciones del movimiento</h2>
+        <div class="frow pos"><span class="flabel">Posición</span><code id="fY">y(t) = a + b·t</code></div>
+        <div class="frow vel"><span class="flabel">Velocidad</span><code id="fV">v(t) = dy/dt = b</code></div>
+        <div class="frow acc"><span class="flabel">Aceleración</span><code id="fA">a(t) = d²y/dt² = 0</code></div>
       </div>
 
       <div class="panel"><canvas id="stage" width="700" height="360"></canvas></div>
@@ -233,11 +251,25 @@
   const $ = (id) => document.getElementById(id);
 
   const presets = {
-    mru:      { eq: "a + b*t",            a: 0,  b: 10, c: 0  },
-    mruv:     { eq: "a + b*t - 0.5*g*t^2", a: 0,  b: 20, c: 0  },
-    armonico: { eq: "a*sin(b*t) + c",     a: 20, b: 2,  c: 30 },
-    exp:      { eq: "a*exp(b*t)",          a: 2,  b: 0.4, c: 0 },
+    mru:      { eq: "a + b*t",             a: 0,  b: 10,  c: 0,
+                ySym: "y(t) = y₀ + v·t",        vSym: "v(t) = v = const.",        aSym: "a(t) = 0" },
+    mruv:     { eq: "a + b*t - 0.5*g*t^2", a: 0,  b: 20,  c: 0,
+                ySym: "y(t) = y₀ + v₀·t − ½·g·t²", vSym: "v(t) = v₀ − g·t",        aSym: "a(t) = −g = −9.81 m/s²" },
+    armonico: { eq: "a*sin(b*t) + c",      a: 20, b: 2,   c: 30,
+                ySym: "y(t) = A·sin(ω·t) + y₀",  vSym: "v(t) = A·ω·cos(ω·t)",     aSym: "a(t) = −A·ω²·sin(ω·t)" },
+    exp:      { eq: "a*exp(b*t)",          a: 2,  b: 0.4, c: 0,
+                ySym: "y(t) = A·e^(k·t)",        vSym: "v(t) = A·k·e^(k·t)",      aSym: "a(t) = A·k²·e^(k·t)" },
+    custom:   { ySym: "y(t) = expresión definida por el usuario",
+                vSym: "v(t) = dy/dt  (derivada numérica)",
+                aSym: "a(t) = d²y/dt²  (derivada numérica)" },
   };
+
+  function updateFormulaPanel() {
+    const p = presets[presetEl.value] || presets.custom;
+    $("fY").textContent = presetEl.value === "custom" ? ("y(t) = " + eqEl.value) : p.ySym;
+    $("fV").textContent = p.vSym;
+    $("fA").textContent = p.aSym;
+  }
 
   const state = {
     eq: "a + b*t", a: 0, b: 10, c: 0,
@@ -326,13 +358,13 @@
 
   presetEl.addEventListener("change", () => {
     const p = presets[presetEl.value];
-    if (p) {
+    if (p && p.eq !== undefined) {
       eqEl.value = p.eq; aEl.value = p.a; bEl.value = p.b; cEl.value = p.c;
     }
-    syncInputs(); recompile(); reset();
+    syncInputs(); recompile(); updateFormulaPanel(); reset();
   });
 
-  eqEl.addEventListener("input", () => { presetEl.value = "custom"; if (recompile()) reset(); });
+  eqEl.addEventListener("input", () => { presetEl.value = "custom"; updateFormulaPanel(); if (recompile()) reset(); });
   [aEl, bEl, cEl, durEl].forEach((el) => el.addEventListener("input", () => {
     syncInputs(); if (recompile()) reset();
   }));
@@ -460,6 +492,14 @@
   function drawPosGraph() {
     drawAxes(pctx, gPos.width, gPos.height, "t (s)", "y (m)");
     drawCurve(pctx, gPos.width, gPos.height, y, "#38bdf8", state.range.min, state.range.max);
+    // Anotación: función de posición
+    pctx.fillStyle = "#7dd3fc";
+    pctx.font = "italic 13px 'SF Mono', monospace";
+    pctx.textAlign = "left";
+    pctx.fillText("y(t)", 48, 22);
+    pctx.fillStyle = "#94a3b8";
+    pctx.font = "italic 10px 'SF Mono', monospace";
+    pctx.fillText("pendiente = dy/dt = v", 48, 36);
   }
 
   function drawVelGraph() {
@@ -482,10 +522,18 @@
       vctx.setLineDash([]);
     }
     drawCurve(vctx, gVel.width, gVel.height, vel, "#22c55e", vmin, vmax);
+    // Anotación: velocidad como derivada
+    vctx.fillStyle = "#86efac";
+    vctx.font = "italic 13px 'SF Mono', monospace";
+    vctx.textAlign = "left";
+    vctx.fillText("v(t) = dy/dt", 48, 22);
+    vctx.fillStyle = "#94a3b8";
+    vctx.font = "italic 10px 'SF Mono', monospace";
+    vctx.fillText("pendiente = dv/dt = a", 48, 36);
   }
 
   // --- Inicio ---
-  syncInputs(); recompile(); reset();
+  syncInputs(); recompile(); updateFormulaPanel(); reset();
 })();
 </script>
 </body>

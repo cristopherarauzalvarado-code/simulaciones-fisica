@@ -1,0 +1,417 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulación · Movimiento Rectilíneo Uniforme Vertical</title>
+<style>
+  :root {
+    --bg: #0f172a;
+    --panel: #1e293b;
+    --panel-2: #273449;
+    --border: #334155;
+    --text: #e2e8f0;
+    --muted: #94a3b8;
+    --accent: #38bdf8;
+    --accent-2: #22c55e;
+    --danger: #f87171;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(circle at 20% 0%, #16233f, var(--bg));
+    color: var(--text);
+    min-height: 100vh;
+    padding: 24px;
+  }
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 { font-size: 1.6rem; font-weight: 600; }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+  .layout {
+    display: grid;
+    grid-template-columns: 320px 1fr;
+    gap: 20px;
+    max-width: 1100px;
+    margin: 0 auto;
+  }
+  @media (max-width: 820px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel {
+    background: var(--panel);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 20px;
+  }
+  .panel h2 {
+    font-size: 0.8rem;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--muted);
+    margin-bottom: 16px;
+  }
+
+  .field { margin-bottom: 18px; }
+  .field label {
+    display: flex;
+    justify-content: space-between;
+    font-size: 0.9rem;
+    margin-bottom: 8px;
+  }
+  .field label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  .hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  .buttons { display: flex; gap: 10px; margin-top: 8px; }
+  button {
+    flex: 1;
+    padding: 10px;
+    border: none;
+    border-radius: 10px;
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: transform 0.08s, opacity 0.2s;
+  }
+  button:active { transform: scale(0.96); }
+  .btn-play { background: var(--accent-2); color: #052e16; }
+  .btn-reset { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+
+  .stage-wrap { display: grid; grid-template-rows: auto auto; gap: 20px; }
+  .readouts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+    margin-bottom: 4px;
+  }
+  .readout {
+    background: var(--panel-2);
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    padding: 12px;
+    text-align: center;
+  }
+  .readout span { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .readout b { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
+
+  canvas { display: block; width: 100%; border-radius: 12px; background: var(--panel-2); }
+  .graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .graphs { grid-template-columns: 1fr; } }
+  .graph-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
+</style>
+</head>
+<body>
+  <header>
+    <h1>Movimiento Rectilíneo Uniforme <span>Vertical</span></h1>
+    <p>Física I · Ingeniería del Software — velocidad constante, aceleración cero</p>
+  </header>
+
+  <div class="layout">
+    <!-- Controles -->
+    <aside class="panel">
+      <h2>Parámetros</h2>
+
+      <div class="field">
+        <label>Posición inicial · y₀ <b id="lblY0">0 m</b></label>
+        <input type="range" id="y0" min="0" max="100" value="0" step="1" />
+        <div class="hint">Altura desde el suelo al iniciar.</div>
+      </div>
+
+      <div class="field">
+        <label>Velocidad · v <b id="lblV">10 m/s</b></label>
+        <input type="range" id="v" min="-30" max="30" value="10" step="1" />
+        <div class="hint">Positiva = sube · Negativa = baja. Constante durante todo el movimiento.</div>
+      </div>
+
+      <div class="field">
+        <label>Velocidad de animación <b id="lblSpeed">1.0×</b></label>
+        <input type="range" id="speed" min="0.25" max="3" value="1" step="0.25" />
+      </div>
+
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Iniciar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <!-- Escenario -->
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>Tiempo</span><b id="outT">0.00 s</b></div>
+        <div class="readout"><span>Posición</span><b id="outY">0.0 m</b></div>
+        <div class="readout"><span>Velocidad</span><b id="outV">10.0 m/s</b></div>
+        <div class="readout"><span>Ecuación</span><b id="outEq">y = y₀ + v·t</b></div>
+      </div>
+
+      <div class="panel">
+        <canvas id="stage" width="700" height="360"></canvas>
+      </div>
+
+      <div class="panel graphs">
+        <div>
+          <div class="graph-title">Posición vs. Tiempo (y–t)</div>
+          <canvas id="gPos" width="320" height="200"></canvas>
+        </div>
+        <div>
+          <div class="graph-title">Velocidad vs. Tiempo (v–t)</div>
+          <canvas id="gVel" width="320" height="200"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+(() => {
+  "use strict";
+
+  // --- Estado y parámetros ---
+  const state = {
+    y0: 0,        // m
+    v: 10,        // m/s (constante)
+    speed: 1,     // factor de tiempo de la animación
+    t: 0,         // s
+    y: 0,         // m
+    running: false,
+    lastTs: null,
+    history: [],  // {t, y}
+  };
+
+  const WORLD_MAX = 100; // metros visibles en el eje vertical
+
+  // --- Elementos ---
+  const $ = (id) => document.getElementById(id);
+  const y0El = $("y0"), vEl = $("v"), speedEl = $("speed");
+  const lblY0 = $("lblY0"), lblV = $("lblV"), lblSpeed = $("lblSpeed");
+  const outT = $("outT"), outY = $("outY"), outV = $("outV");
+  const playBtn = $("playBtn"), resetBtn = $("resetBtn");
+
+  const stage = $("stage"), sctx = stage.getContext("2d");
+  const gPos = $("gPos"), pctx = gPos.getContext("2d");
+  const gVel = $("gVel"), vctx = gVel.getContext("2d");
+
+  // --- Lectura de controles ---
+  function syncInputs() {
+    state.y0 = +y0El.value;
+    state.v = +vEl.value;
+    state.speed = +speedEl.value;
+    lblY0.textContent = state.y0 + " m";
+    lblV.textContent = state.v + " m/s";
+    lblSpeed.textContent = state.speed.toFixed(2) + "×";
+  }
+
+  [y0El, vEl, speedEl].forEach((el) =>
+    el.addEventListener("input", () => {
+      syncInputs();
+      if (!state.running) reset();
+    })
+  );
+
+  // --- Control de tiempo ---
+  function reset() {
+    state.running = false;
+    state.t = 0;
+    state.y = state.y0;
+    state.lastTs = null;
+    state.history = [{ t: 0, y: state.y0 }];
+    playBtn.textContent = "▶ Iniciar";
+    render();
+  }
+
+  function toggle() {
+    if (state.running) {
+      state.running = false;
+      playBtn.textContent = "▶ Reanudar";
+    } else {
+      state.running = true;
+      state.lastTs = null;
+      playBtn.textContent = "❚❚ Pausar";
+      requestAnimationFrame(loop);
+    }
+  }
+
+  playBtn.addEventListener("click", toggle);
+  resetBtn.addEventListener("click", reset);
+
+  // --- Bucle de animación ---
+  function loop(ts) {
+    if (!state.running) return;
+    if (state.lastTs === null) state.lastTs = ts;
+    const dt = ((ts - state.lastTs) / 1000) * state.speed;
+    state.lastTs = ts;
+
+    state.t += dt;
+    state.y = state.y0 + state.v * state.t; // MRU: y(t) = y0 + v·t
+
+    state.history.push({ t: state.t, y: state.y });
+    if (state.history.length > 2000) state.history.shift();
+
+    // Detener al salir del rango visible
+    if (state.y < 0 || state.y > WORLD_MAX) {
+      state.y = Math.max(0, Math.min(WORLD_MAX, state.y));
+      state.running = false;
+      playBtn.textContent = "▶ Iniciar";
+    }
+
+    render();
+    if (state.running) requestAnimationFrame(loop);
+  }
+
+  // --- Dibujo del escenario ---
+  function render() {
+    drawStage();
+    drawPosGraph();
+    drawVelGraph();
+    outT.textContent = state.t.toFixed(2) + " s";
+    outY.textContent = state.y.toFixed(1) + " m";
+    outV.textContent = state.v.toFixed(1) + " m/s";
+  }
+
+  function drawStage() {
+    const W = stage.width, H = stage.height;
+    sctx.clearRect(0, 0, W, H);
+
+    const padTop = 20, padBottom = 20;
+    const usableH = H - padTop - padBottom;
+    const trackX = W * 0.5;
+
+    // Mapea metros (0..WORLD_MAX) a píxeles (abajo..arriba)
+    const yToPx = (m) => H - padBottom - (m / WORLD_MAX) * usableH;
+
+    // Suelo
+    sctx.strokeStyle = "#475569";
+    sctx.lineWidth = 2;
+    sctx.beginPath();
+    sctx.moveTo(40, yToPx(0));
+    sctx.lineTo(W - 40, yToPx(0));
+    sctx.stroke();
+
+    // Marcas de escala cada 20 m
+    sctx.fillStyle = "#64748b";
+    sctx.font = "11px system-ui";
+    sctx.textAlign = "right";
+    sctx.strokeStyle = "#293548";
+    for (let m = 0; m <= WORLD_MAX; m += 20) {
+      const py = yToPx(m);
+      sctx.beginPath();
+      sctx.moveTo(60, py);
+      sctx.lineTo(W - 40, py);
+      sctx.stroke();
+      sctx.fillText(m + " m", 55, py + 4);
+    }
+
+    // Trayectoria
+    sctx.strokeStyle = "rgba(56,189,248,0.25)";
+    sctx.lineWidth = 3;
+    sctx.beginPath();
+    sctx.moveTo(trackX, yToPx(0));
+    sctx.lineTo(trackX, yToPx(WORLD_MAX));
+    sctx.stroke();
+
+    // Objeto
+    const py = yToPx(state.y);
+    sctx.beginPath();
+    sctx.arc(trackX, py, 14, 0, Math.PI * 2);
+    const grad = sctx.createRadialGradient(trackX - 4, py - 4, 2, trackX, py, 16);
+    grad.addColorStop(0, "#7dd3fc");
+    grad.addColorStop(1, "#0284c7");
+    sctx.fillStyle = grad;
+    sctx.fill();
+
+    // Vector velocidad
+    const dir = Math.sign(state.v) || 1;
+    const len = Math.min(Math.abs(state.v) * 1.6, 50);
+    if (len > 2) {
+      const tipY = py - dir * len;
+      sctx.strokeStyle = "#22c55e";
+      sctx.lineWidth = 3;
+      sctx.beginPath();
+      sctx.moveTo(trackX + 26, py);
+      sctx.lineTo(trackX + 26, tipY);
+      sctx.stroke();
+      sctx.beginPath();
+      sctx.moveTo(trackX + 26, tipY);
+      sctx.lineTo(trackX + 21, tipY + dir * 7);
+      sctx.lineTo(trackX + 31, tipY + dir * 7);
+      sctx.closePath();
+      sctx.fillStyle = "#22c55e";
+      sctx.fill();
+    }
+  }
+
+  // --- Gráficas ---
+  function drawAxes(ctx, w, h, xlabel, ylabel) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = "#334155";
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    ctx.moveTo(36, 10);
+    ctx.lineTo(36, h - 26);
+    ctx.lineTo(w - 10, h - 26);
+    ctx.stroke();
+    ctx.fillStyle = "#64748b";
+    ctx.font = "10px system-ui";
+    ctx.textAlign = "right";
+    ctx.fillText(ylabel, 32, 16);
+    ctx.textAlign = "left";
+    ctx.fillText(xlabel, w - 40, h - 12);
+  }
+
+  function timeWindow() {
+    const tMax = Math.max(state.t, 4);
+    return tMax;
+  }
+
+  function drawPosGraph() {
+    const w = gPos.width, h = gPos.height;
+    drawAxes(pctx, w, h, "t (s)", "y (m)");
+    const x0 = 36, y0px = h - 26, plotW = w - 46, plotH = h - 36;
+    const tMax = timeWindow();
+    const xT = (t) => x0 + (t / tMax) * plotW;
+    const yY = (y) => y0px - (y / WORLD_MAX) * plotH;
+
+    pctx.strokeStyle = "#38bdf8";
+    pctx.lineWidth = 2;
+    pctx.beginPath();
+    state.history.forEach((p, i) => {
+      const px = xT(p.t), py = yY(Math.max(0, Math.min(WORLD_MAX, p.y)));
+      i === 0 ? pctx.moveTo(px, py) : pctx.lineTo(px, py);
+    });
+    pctx.stroke();
+  }
+
+  function drawVelGraph() {
+    const w = gVel.width, h = gVel.height;
+    drawAxes(vctx, w, h, "t (s)", "v (m/s)");
+    const x0 = 36, plotW = w - 46, plotH = h - 36, top = 10;
+    const tMax = timeWindow();
+    const vRange = 30;
+    const xT = (t) => x0 + (t / tMax) * plotW;
+    // mapea v de [-vRange, vRange] al área del gráfico
+    const yV = (v) => top + (1 - (v + vRange) / (2 * vRange)) * plotH;
+
+    // Línea v = 0
+    vctx.strokeStyle = "#334155";
+    vctx.setLineDash([4, 4]);
+    vctx.beginPath();
+    vctx.moveTo(x0, yV(0));
+    vctx.lineTo(w - 10, yV(0));
+    vctx.stroke();
+    vctx.setLineDash([]);
+
+    // v constante → línea horizontal
+    vctx.strokeStyle = "#22c55e";
+    vctx.lineWidth = 2;
+    vctx.beginPath();
+    vctx.moveTo(xT(0), yV(state.v));
+    vctx.lineTo(xT(state.t || tMax * 0.001), yV(state.v));
+    vctx.stroke();
+  }
+
+  // --- Inicio ---
+  syncInputs();
+  reset();
+})();
+</script>
+</body>
+</html>

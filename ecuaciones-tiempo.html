@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Simulador de Ecuaciones Dependientes del Tiempo · Física I</title>
+<style>
+  :root {
+    --bg: #0f172a; --panel: #1e293b; --panel-2: #273449; --border: #334155;
+    --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8; --accent-2: #22c55e;
+    --danger: #f87171; --warn: #fbbf24;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+    background: radial-gradient(circle at 20% 0%, #16233f, var(--bg));
+    color: var(--text); min-height: 100vh; padding: 24px;
+  }
+  a { color: var(--accent); }
+  .topbar { max-width: 1100px; margin: 0 auto 16px; font-size: 0.9rem; }
+  header { text-align: center; margin-bottom: 24px; }
+  header h1 { font-size: 1.6rem; font-weight: 600; }
+  header h1 span { color: var(--accent); }
+  header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+  .layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; max-width: 1100px; margin: 0 auto; }
+  @media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+
+  .panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+  .panel h2 { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px; }
+
+  .field { margin-bottom: 16px; }
+  .field label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 8px; }
+  .field label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+  input[type="range"] { width: 100%; accent-color: var(--accent); }
+  select, input[type="text"] {
+    width: 100%; padding: 10px; background: var(--panel-2); color: var(--text);
+    border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-family: inherit;
+  }
+  input[type="text"] { font-family: "SF Mono", ui-monospace, monospace; }
+  .eq-row { display: flex; align-items: center; gap: 8px; }
+  .eq-row span { color: var(--muted); white-space: nowrap; font-family: "SF Mono", ui-monospace, monospace; }
+  .error { color: var(--danger); font-size: 0.78rem; margin-top: 6px; min-height: 1em; }
+  .hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+  .buttons { display: flex; gap: 10px; margin-top: 8px; }
+  button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: transform 0.08s; }
+  button:active { transform: scale(0.96); }
+  .btn-play { background: var(--accent-2); color: #052e16; }
+  .btn-reset { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+
+  .stage-wrap { display: grid; gap: 20px; }
+  .readouts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+  .readout { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+  .readout span { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+  .readout b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+
+  canvas { display: block; width: 100%; border-radius: 12px; background: var(--panel-2); }
+  .graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  @media (max-width: 560px) { .graphs { grid-template-columns: 1fr; } }
+  .graph-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
+
+  /* Teoría */
+  .theory { max-width: 1100px; margin: 28px auto 0; }
+  .theory .panel { padding: 28px; }
+  .theory h2 { font-size: 1.2rem; text-transform: none; letter-spacing: 0; color: var(--text); margin-bottom: 14px; }
+  .theory h3 { font-size: 1rem; color: var(--accent); margin: 22px 0 8px; }
+  .theory p { color: #cbd5e1; line-height: 1.7; margin-bottom: 12px; }
+  .theory ul { color: #cbd5e1; line-height: 1.7; margin: 0 0 12px 20px; }
+  .formula {
+    background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+    border-radius: 8px; padding: 14px 16px; margin: 12px 0; font-family: "SF Mono", ui-monospace, monospace;
+    font-size: 0.95rem; overflow-x: auto;
+  }
+  .formula small { color: var(--muted); display: block; margin-top: 6px; font-family: inherit; }
+  code { background: var(--panel-2); padding: 2px 6px; border-radius: 5px; font-family: "SF Mono", ui-monospace, monospace; font-size: 0.88em; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+  @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+</style>
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver a las simulaciones</a></div>
+
+  <header>
+    <h1>Ecuaciones dependientes del <span>tiempo</span></h1>
+    <p>Física I · Ingeniería del Software — escribe y(t) y obsérvala en movimiento</p>
+  </header>
+
+  <div class="layout">
+    <!-- Controles -->
+    <aside class="panel">
+      <h2>Definición del movimiento</h2>
+
+      <div class="field">
+        <label>Modelo predefinido</label>
+        <select id="preset">
+          <option value="mru">MRU · y = a + b·t</option>
+          <option value="mruv">MRUV / caída libre · y = a + b·t − ½·g·t²</option>
+          <option value="armonico">Oscilador armónico · y = a·sin(b·t) + c</option>
+          <option value="exp">Crecimiento exponencial · y = a·exp(b·t)</option>
+          <option value="custom">Personalizado…</option>
+        </select>
+      </div>
+
+      <div class="field">
+        <label>Ecuación de posición</label>
+        <div class="eq-row"><span>y(t) =</span><input type="text" id="eq" value="a + b*t" spellcheck="false" /></div>
+        <div class="error" id="eqError"></div>
+        <div class="hint">Variables: <code>t</code>, <code>a</code>, <code>b</code>, <code>c</code>, <code>g</code>. Funciones: sin, cos, tan, exp, sqrt, abs, log, pi. Potencia con <code>^</code>.</div>
+      </div>
+
+      <div class="field">
+        <label>a <b id="lblA">0</b></label>
+        <input type="range" id="a" min="-50" max="50" value="0" step="0.5" />
+      </div>
+      <div class="field">
+        <label>b <b id="lblB">10</b></label>
+        <input type="range" id="b" min="-30" max="30" value="10" step="0.5" />
+      </div>
+      <div class="field">
+        <label>c <b id="lblC">0</b></label>
+        <input type="range" id="c" min="-50" max="50" value="0" step="0.5" />
+      </div>
+
+      <div class="field">
+        <label>Duración <b id="lblDur">8 s</b></label>
+        <input type="range" id="dur" min="2" max="30" value="8" step="1" />
+      </div>
+      <div class="field">
+        <label>Velocidad de animación <b id="lblSpeed">1.0×</b></label>
+        <input type="range" id="speed" min="0.25" max="3" value="1" step="0.25" />
+      </div>
+
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Iniciar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+      <div class="hint" style="margin-top:10px">g = 9.81 m/s² (constante de gravedad).</div>
+    </aside>
+
+    <!-- Escenario -->
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>Tiempo</span><b id="outT">0.00 s</b></div>
+        <div class="readout"><span>Posición y(t)</span><b id="outY">0.0 m</b></div>
+        <div class="readout"><span>Velocidad y'(t)</span><b id="outV">0.0 m/s</b></div>
+        <div class="readout"><span>Aceleración y''(t)</span><b id="outAcc">0.0 m/s²</b></div>
+      </div>
+
+      <div class="panel"><canvas id="stage" width="700" height="360"></canvas></div>
+
+      <div class="panel graphs">
+        <div>
+          <div class="graph-title">Posición vs. Tiempo (y–t)</div>
+          <canvas id="gPos" width="320" height="200"></canvas>
+        </div>
+        <div>
+          <div class="graph-title">Velocidad vs. Tiempo (v–t)</div>
+          <canvas id="gVel" width="320" height="200"></canvas>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- ===================== TEORÍA ===================== -->
+  <section class="theory">
+    <div class="panel">
+      <h2>¿Qué es una ecuación dependiente del tiempo?</h2>
+      <p>
+        En cinemática describimos <em>dónde</em> está un cuerpo mediante una función cuya variable
+        independiente es el <strong>tiempo</strong>. Es decir, la posición no es un número fijo: es
+        una <strong>función del tiempo</strong>, <code>y(t)</code>. Cada vez que avanza el reloj,
+        evaluamos la fórmula con el nuevo valor de <code>t</code> y obtenemos la posición en ese
+        instante. Eso es exactamente lo que hace el simulador de arriba: en cada cuadro de animación
+        toma el tiempo transcurrido y calcula <code>y(t)</code>.
+      </p>
+
+      <div class="formula">
+        y(t) = posición en función del tiempo
+        <small>El tiempo es la entrada; la posición es la salida.</small>
+      </div>
+
+      <div class="grid2">
+        <div>
+          <h3>Velocidad: la derivada de la posición</h3>
+          <p>
+            La <strong>velocidad</strong> mide qué tan rápido cambia la posición. Matemáticamente es
+            la derivada de <code>y(t)</code> respecto al tiempo:
+          </p>
+          <div class="formula">v(t) = dy/dt</div>
+          <p>
+            En la simulación la calculamos numéricamente comparando la posición en dos instantes muy
+            cercanos: <code>v ≈ [y(t+h) − y(t−h)] / 2h</code>.
+          </p>
+        </div>
+        <div>
+          <h3>Aceleración: la derivada de la velocidad</h3>
+          <p>
+            La <strong>aceleración</strong> mide qué tan rápido cambia la velocidad; es la segunda
+            derivada de la posición:
+          </p>
+          <div class="formula">a(t) = dv/dt = d²y/dt²</div>
+          <p>
+            Si <code>a(t) = 0</code> la velocidad es constante (MRU). Si <code>a(t)</code> es una
+            constante distinta de cero, tenemos MRUV.
+          </p>
+        </div>
+      </div>
+
+      <h3>Los modelos predefinidos</h3>
+      <ul>
+        <li><strong>MRU</strong> — <code>y = a + b·t</code>: recta. Velocidad constante (<code>b</code>), aceleración cero. La gráfica y–t es una línea recta.</li>
+        <li><strong>MRUV / caída libre</strong> — <code>y = a + b·t − ½·g·t²</code>: parábola. Velocidad cambia de forma lineal; aceleración constante (<code>−g</code>). Aquí <em>sí</em> entra la gravedad.</li>
+        <li><strong>Oscilador armónico</strong> — <code>y = a·sin(b·t) + c</code>: movimiento que se repite. Ni la velocidad ni la aceleración son constantes.</li>
+        <li><strong>Exponencial</strong> — <code>y = a·exp(b·t)</code>: crecimiento (o decaimiento) acelerado, útil para comparar con los movimientos polinómicos.</li>
+      </ul>
+
+      <h3>Cómo leer las gráficas</h3>
+      <p>
+        La gráfica <strong>y–t</strong> muestra la trayectoria en el tiempo: su <em>pendiente</em> en
+        cada punto es la velocidad. La gráfica <strong>v–t</strong> muestra esa velocidad
+        directamente: su pendiente, a su vez, es la aceleración. Cambia el modelo o escribe tu propia
+        ecuación y observa cómo se relacionan las tres magnitudes.
+      </p>
+    </div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+
+  const G = 9.81;
+  const $ = (id) => document.getElementById(id);
+
+  const presets = {
+    mru:      { eq: "a + b*t",            a: 0,  b: 10, c: 0  },
+    mruv:     { eq: "a + b*t - 0.5*g*t^2", a: 0,  b: 20, c: 0  },
+    armonico: { eq: "a*sin(b*t) + c",     a: 20, b: 2,  c: 30 },
+    exp:      { eq: "a*exp(b*t)",          a: 2,  b: 0.4, c: 0 },
+  };
+
+  const state = {
+    eq: "a + b*t", a: 0, b: 10, c: 0,
+    dur: 8, speed: 1, t: 0, running: false, lastTs: null,
+    fn: null, range: { min: 0, max: 100 },
+  };
+
+  // --- Parser seguro de expresiones ---
+  // Solo permite tokens de cinemática; convierte a JS evaluable con Math.
+  function compile(expr) {
+    const cleaned = expr.toLowerCase().trim();
+    // Validación: solo caracteres permitidos
+    if (!/^[0-9a-z+\-*/^().,\s]*$/.test(cleaned)) {
+      throw new Error("Caracteres no permitidos.");
+    }
+    let js = cleaned
+      .replace(/\^/g, "**")
+      .replace(/\bpi\b/g, "Math.PI")
+      .replace(/\b(sin|cos|tan|exp|sqrt|abs|log|sign|atan|asin|acos|cbrt|pow|min|max)\b/g, "Math.$1");
+    // Tras los reemplazos, los únicos identificadores válidos son las variables y Math.*
+    const stripped = js.replace(/Math\.[A-Za-z]+/g, "");
+    const idents = stripped.match(/[a-z_][a-z0-9_]*/gi) || [];
+    const allowed = new Set(["t", "a", "b", "c", "g", "e"]);
+    for (const id of idents) {
+      if (!allowed.has(id)) throw new Error("Símbolo desconocido: " + id);
+    }
+    js = js.replace(/\be\b/g, "Math.E");
+    // eslint-disable-next-line no-new-func
+    const f = new Function("t", "a", "b", "c", "g", "return (" + js + ");");
+    // prueba de evaluación
+    const test = f(0, state.a, state.b, state.c, G);
+    if (typeof test !== "number" || Number.isNaN(test)) {
+      throw new Error("La ecuación no produce un número.");
+    }
+    return f;
+  }
+
+  function y(t) { return state.fn(t, state.a, state.b, state.c, G); }
+  function vel(t) { const h = 1e-3; return (y(t + h) - y(t - h)) / (2 * h); }
+  function acc(t) { const h = 1e-2; return (y(t + h) - 2 * y(t) + y(t - h)) / (h * h); }
+
+  // --- Recalcula el rango vertical para autoescalar el escenario y la gráfica y–t ---
+  function computeRange() {
+    let min = Infinity, max = -Infinity;
+    const N = 240;
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * state.dur;
+      const val = y(t);
+      if (Number.isFinite(val)) { if (val < min) min = val; if (val > max) max = val; }
+    }
+    if (!Number.isFinite(min) || !Number.isFinite(max)) { min = 0; max = 1; }
+    if (max - min < 1e-6) { max += 1; min -= 1; }
+    const pad = (max - min) * 0.08;
+    state.range = { min: min - pad, max: max + pad };
+  }
+
+  // --- Inputs ---
+  const eqEl = $("eq"), eqError = $("eqError"), presetEl = $("preset");
+  const aEl = $("a"), bEl = $("b"), cEl = $("c"), durEl = $("dur"), speedEl = $("speed");
+  const lblA = $("lblA"), lblB = $("lblB"), lblC = $("lblC"), lblDur = $("lblDur"), lblSpeed = $("lblSpeed");
+  const outT = $("outT"), outY = $("outY"), outV = $("outV"), outAcc = $("outAcc");
+  const playBtn = $("playBtn"), resetBtn = $("resetBtn");
+
+  const stage = $("stage"), sctx = stage.getContext("2d");
+  const gPos = $("gPos"), pctx = gPos.getContext("2d");
+  const gVel = $("gVel"), vctx = gVel.getContext("2d");
+
+  function recompile() {
+    try {
+      state.fn = compile(eqEl.value);
+      eqError.textContent = "";
+      computeRange();
+      return true;
+    } catch (err) {
+      eqError.textContent = "⚠ " + err.message;
+      return false;
+    }
+  }
+
+  function syncInputs() {
+    state.a = +aEl.value; state.b = +bEl.value; state.c = +cEl.value;
+    state.dur = +durEl.value; state.speed = +speedEl.value; state.eq = eqEl.value;
+    lblA.textContent = state.a; lblB.textContent = state.b; lblC.textContent = state.c;
+    lblDur.textContent = state.dur + " s"; lblSpeed.textContent = state.speed.toFixed(2) + "×";
+  }
+
+  presetEl.addEventListener("change", () => {
+    const p = presets[presetEl.value];
+    if (p) {
+      eqEl.value = p.eq; aEl.value = p.a; bEl.value = p.b; cEl.value = p.c;
+    }
+    syncInputs(); recompile(); reset();
+  });
+
+  eqEl.addEventListener("input", () => { presetEl.value = "custom"; if (recompile()) reset(); });
+  [aEl, bEl, cEl, durEl].forEach((el) => el.addEventListener("input", () => {
+    syncInputs(); if (recompile()) reset();
+  }));
+  speedEl.addEventListener("input", syncInputs);
+
+  // --- Tiempo ---
+  function reset() {
+    state.running = false; state.t = 0; state.lastTs = null;
+    playBtn.textContent = "▶ Iniciar";
+    render();
+  }
+  function toggle() {
+    if (!state.fn) return;
+    if (state.running) { state.running = false; playBtn.textContent = "▶ Reanudar"; }
+    else {
+      if (state.t >= state.dur) state.t = 0;
+      state.running = true; state.lastTs = null;
+      playBtn.textContent = "❚❚ Pausar";
+      requestAnimationFrame(loop);
+    }
+  }
+  playBtn.addEventListener("click", toggle);
+  resetBtn.addEventListener("click", reset);
+
+  function loop(ts) {
+    if (!state.running) return;
+    if (state.lastTs === null) state.lastTs = ts;
+    const dt = ((ts - state.lastTs) / 1000) * state.speed;
+    state.lastTs = ts;
+    state.t += dt;
+    if (state.t >= state.dur) { state.t = state.dur; state.running = false; playBtn.textContent = "▶ Iniciar"; }
+    render();
+    if (state.running) requestAnimationFrame(loop);
+  }
+
+  // --- Render ---
+  function render() {
+    if (!state.fn) return;
+    drawStage(); drawPosGraph(); drawVelGraph();
+    outT.textContent = state.t.toFixed(2) + " s";
+    outY.textContent = y(state.t).toFixed(1) + " m";
+    outV.textContent = vel(state.t).toFixed(1) + " m/s";
+    outAcc.textContent = acc(state.t).toFixed(1) + " m/s²";
+  }
+
+  function drawStage() {
+    const W = stage.width, H = stage.height, padTop = 24, padBottom = 24;
+    const usableH = H - padTop - padBottom, trackX = W * 0.5;
+    const { min, max } = state.range;
+    const yToPx = (m) => H - padBottom - ((m - min) / (max - min)) * usableH;
+
+    sctx.clearRect(0, 0, W, H);
+
+    // Escala (5 marcas)
+    sctx.fillStyle = "#64748b"; sctx.font = "11px system-ui"; sctx.textAlign = "right";
+    sctx.strokeStyle = "#293548"; sctx.lineWidth = 1;
+    for (let i = 0; i <= 5; i++) {
+      const m = min + (i / 5) * (max - min), py = yToPx(m);
+      sctx.beginPath(); sctx.moveTo(60, py); sctx.lineTo(W - 40, py); sctx.stroke();
+      sctx.fillText(m.toFixed(0) + " m", 55, py + 4);
+    }
+    // y = 0 resaltado si está en rango
+    if (min <= 0 && max >= 0) {
+      sctx.strokeStyle = "#475569"; sctx.lineWidth = 2;
+      sctx.beginPath(); sctx.moveTo(60, yToPx(0)); sctx.lineTo(W - 40, yToPx(0)); sctx.stroke();
+    }
+
+    // Trayectoria recorrida (estela hasta t actual)
+    sctx.strokeStyle = "rgba(56,189,248,0.35)"; sctx.lineWidth = 3;
+    sctx.beginPath();
+    const steps = 120;
+    for (let i = 0; i <= steps; i++) {
+      const t = (i / steps) * state.t, py = yToPx(y(t));
+      i === 0 ? sctx.moveTo(trackX, py) : sctx.lineTo(trackX, py);
+    }
+    sctx.stroke();
+
+    // Objeto
+    const py = yToPx(y(state.t));
+    const grad = sctx.createRadialGradient(trackX - 4, py - 4, 2, trackX, py, 16);
+    grad.addColorStop(0, "#7dd3fc"); grad.addColorStop(1, "#0284c7");
+    sctx.beginPath(); sctx.arc(trackX, py, 14, 0, Math.PI * 2); sctx.fillStyle = grad; sctx.fill();
+
+    // Vector velocidad
+    const v = vel(state.t), dir = Math.sign(v) || 1, len = Math.min(Math.abs(v) * 1.4, 55);
+    if (len > 2) {
+      const tipY = py - dir * len;
+      sctx.strokeStyle = "#22c55e"; sctx.lineWidth = 3;
+      sctx.beginPath(); sctx.moveTo(trackX + 26, py); sctx.lineTo(trackX + 26, tipY); sctx.stroke();
+      sctx.beginPath(); sctx.moveTo(trackX + 26, tipY);
+      sctx.lineTo(trackX + 21, tipY + dir * 7); sctx.lineTo(trackX + 31, tipY + dir * 7);
+      sctx.closePath(); sctx.fillStyle = "#22c55e"; sctx.fill();
+    }
+  }
+
+  function drawAxes(ctx, w, h, xlabel, ylabel) {
+    ctx.clearRect(0, 0, w, h);
+    ctx.strokeStyle = "#334155"; ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(40, 10); ctx.lineTo(40, h - 26); ctx.lineTo(w - 10, h - 26); ctx.stroke();
+    ctx.fillStyle = "#64748b"; ctx.font = "10px system-ui";
+    ctx.textAlign = "right"; ctx.fillText(ylabel, 36, 16);
+    ctx.textAlign = "left"; ctx.fillText(xlabel, w - 44, h - 12);
+  }
+
+  function drawCurve(ctx, w, h, fn, color, vmin, vmax) {
+    const x0 = 40, ybase = h - 26, plotW = w - 50, plotH = h - 36, top = 10;
+    const xT = (t) => x0 + (t / state.dur) * plotW;
+    const yV = (val) => top + (1 - (val - vmin) / (vmax - vmin)) * plotH;
+    // marcador de progreso
+    ctx.strokeStyle = "#334155"; ctx.setLineDash([3, 3]);
+    ctx.beginPath(); ctx.moveTo(xT(state.t), top); ctx.lineTo(xT(state.t), ybase); ctx.stroke();
+    ctx.setLineDash([]);
+    // curva
+    ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.beginPath();
+    const N = 200; let started = false;
+    for (let i = 0; i <= N; i++) {
+      const t = (i / N) * state.dur, val = fn(t);
+      if (!Number.isFinite(val)) { started = false; continue; }
+      const px = xT(t), py = yV(val);
+      started ? ctx.lineTo(px, py) : (ctx.moveTo(px, py), started = true);
+    }
+    ctx.stroke();
+  }
+
+  function drawPosGraph() {
+    drawAxes(pctx, gPos.width, gPos.height, "t (s)", "y (m)");
+    drawCurve(pctx, gPos.width, gPos.height, y, "#38bdf8", state.range.min, state.range.max);
+  }
+
+  function drawVelGraph() {
+    // rango de velocidad sobre la duración
+    let vmin = Infinity, vmax = -Infinity;
+    for (let i = 0; i <= 200; i++) {
+      const t = (i / 200) * state.dur, vv = vel(t);
+      if (Number.isFinite(vv)) { if (vv < vmin) vmin = vv; if (vv > vmax) vmax = vv; }
+    }
+    if (!Number.isFinite(vmin)) { vmin = -1; vmax = 1; }
+    if (vmax - vmin < 1e-6) { vmax += 1; vmin -= 1; }
+    const pad = (vmax - vmin) * 0.1; vmin -= pad; vmax += pad;
+    drawAxes(vctx, gVel.width, gVel.height, "t (s)", "v (m/s)");
+    // línea v=0
+    if (vmin <= 0 && vmax >= 0) {
+      const top = 10, plotH = gVel.height - 36;
+      const yv0 = top + (1 - (0 - vmin) / (vmax - vmin)) * plotH;
+      vctx.strokeStyle = "#334155"; vctx.setLineDash([4, 4]);
+      vctx.beginPath(); vctx.moveTo(40, yv0); vctx.lineTo(gVel.width - 10, yv0); vctx.stroke();
+      vctx.setLineDash([]);
+    }
+    drawCurve(vctx, gVel.width, gVel.height, vel, "#22c55e", vmin, vmax);
+  }
+
+  // --- Inicio ---
+  syncInputs(); recompile(); reset();
+})();
+</script>
+</body>
+</html>

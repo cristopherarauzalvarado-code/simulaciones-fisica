@@ -51,7 +51,7 @@ button:active { transform: scale(0.96); }
 .readout b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
 .readout.up b { color: #86efac; } .readout.down b { color: #fca5a5; }
 
-canvas { display: block; width: 100%; border-radius: 12px; background: var(--panel-2); }
+canvas { display: block; width: 100%; height: auto; border-radius: 12px; background: var(--panel-2); }
 .graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
 @media (max-width: 760px) { .graphs { grid-template-columns: 1fr; } }
 .graph-title { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
@@ -127,3 +127,47 @@ td code { background: none; padding: 0; color: #7dd3fc; }
 .card h3 { font-size: 1.05rem; margin-bottom: 6px; }
 .card p { color: var(--muted); font-size: 0.88rem; line-height: 1.55; }
 .card .meta { margin-top: 10px; font-size: 0.75rem; color: var(--violet); }
+
+/* ===========================================================
+   Móvil — ajustes de espaciado, tipografía y desbordamiento
+   =========================================================== */
+@media (max-width: 700px) {
+  .week-head { flex-wrap: wrap; }
+  .week-head .mod { margin-left: 0; width: 100%; }
+}
+
+@media (max-width: 560px) {
+  body { padding: 14px; }
+  header { margin-bottom: 18px; }
+  header h1 { font-size: 1.3rem; }
+  header p { font-size: 0.85rem; }
+
+  .panel { padding: 16px; }
+  .theory { margin-top: 18px; }
+  .theory .panel { padding: 18px; }
+  .theory h2 { font-size: 1.05rem; }
+
+  /* Las fórmulas y tablas nunca deben desbordar la pantalla */
+  .formula { font-size: 0.78rem; padding: 12px; line-height: 1.5; }
+  table { font-size: 0.8rem; }
+  th, td { padding: 6px 6px; }
+
+  .usecase { margin-top: 18px; padding: 18px; }
+  .usecase h2 { font-size: 1.05rem; }
+  .usecase .lead { font-size: 0.9rem; }
+  .uc-item { grid-template-columns: 24px 1fr; gap: 10px; }
+  .uc-item .n { width: 24px; height: 24px; font-size: 0.78rem; }
+
+  .intro { margin-bottom: 18px; }
+  .week { margin-bottom: 20px; }
+  .week-head h2 { font-size: 1.02rem; }
+  .card { padding: 16px; }
+
+  .buttons { flex-direction: column; }
+  .readout b { font-size: 1.05rem; }
+}
+
+/* En pantallas muy estrechas, una sola columna de lecturas */
+@media (max-width: 380px) {
+  .readouts { grid-template-columns: 1fr; }
+}

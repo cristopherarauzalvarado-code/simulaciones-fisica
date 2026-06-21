@@ -107,10 +107,19 @@
   .readout span { display: block; font-size: 0.72rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .readout b { font-size: 1.25rem; font-variant-numeric: tabular-nums; }
 
-  canvas { display: block; width: 100%; border-radius: 12px; background: var(--panel-2); }
+  canvas { display: block; width: 100%; height: auto; border-radius: 12px; background: var(--panel-2); }
   .graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 560px) { .graphs { grid-template-columns: 1fr; } }
   .graph-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
+  /* Móvil: evitar desbordamiento horizontal de las lecturas */
+  @media (max-width: 560px) {
+    body { padding: 14px; }
+    .readouts, .derived { grid-template-columns: repeat(2, 1fr); }
+    .buttons { flex-direction: column; }
+  }
+  @media (max-width: 380px) {
+    .readouts, .derived { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>

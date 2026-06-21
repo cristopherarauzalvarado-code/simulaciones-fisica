@@ -55,7 +55,7 @@
   .readout span { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
   .readout b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
 
-  canvas { display: block; width: 100%; border-radius: 12px; background: var(--panel-2); }
+  canvas { display: block; width: 100%; height: auto; border-radius: 12px; background: var(--panel-2); }
   .graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
   @media (max-width: 560px) { .graphs { grid-template-columns: 1fr; } }
   .graph-title { font-size: 0.8rem; color: var(--muted); margin-bottom: 8px; }
@@ -87,6 +87,15 @@
   code { background: var(--panel-2); padding: 2px 6px; border-radius: 5px; font-family: "SF Mono", ui-monospace, monospace; font-size: 0.88em; }
   .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
   @media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+  /* Móvil: evitar desbordamiento horizontal de las lecturas */
+  @media (max-width: 560px) {
+    body { padding: 14px; }
+    .readouts, .derived { grid-template-columns: repeat(2, 1fr); }
+    .buttons { flex-direction: column; }
+  }
+  @media (max-width: 380px) {
+    .readouts, .derived { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>

@@ -53,7 +53,7 @@
   .derived .readout span { color: #7dd3fc; }
   .derived .readout b { font-size: 1.05rem; }
 
-  canvas { display: block; width: 100%; border-radius: 12px; background: var(--panel-2); }
+  canvas { display: block; width: 100%; height: auto; border-radius: 12px; background: var(--panel-2); }
   .graphs { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 14px; }
   @media (max-width: 760px) { .graphs { grid-template-columns: 1fr; } }
   .graph-title { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
@@ -78,6 +78,15 @@
   th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
   th { color: var(--muted); font-weight: 600; }
   td code { background: none; padding: 0; color: #7dd3fc; }
+  /* Móvil: evitar desbordamiento horizontal de las lecturas */
+  @media (max-width: 560px) {
+    body { padding: 14px; }
+    .readouts, .derived { grid-template-columns: repeat(2, 1fr); }
+    .buttons { flex-direction: column; }
+  }
+  @media (max-width: 380px) {
+    .readouts, .derived { grid-template-columns: 1fr; }
+  }
 </style>
 </head>
 <body>

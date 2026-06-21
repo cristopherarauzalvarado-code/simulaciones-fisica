@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Movimiento Circular Uniforme · Física I</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver al portafolio</a></div>
+
+  <header>
+    <h1>Movimiento Circular <span>Uniforme</span></h1>
+    <p>Semana 2 · Cinemática — rapidez constante sobre una circunferencia de radio R</p>
+  </header>
+
+  <section class="theory">
+    <div class="panel">
+      <h2>El concepto físico</h2>
+      <p>
+        En el MCU el cuerpo recorre una circunferencia con <strong>rapidez constante</strong>, pero su
+        <strong>velocidad cambia</strong> porque la dirección varía continuamente. La posición se describe
+        de forma paramétrica con el ángulo <code>θ(t) = θ₀ + ω·t</code>, donde <code>ω</code> es la
+        velocidad angular.
+      </p>
+      <div class="formula">x(t) = R·cos(ω·t)        v = ω·R   (rapidez tangencial)
+y(t) = R·sen(ω·t)        T = 2π/ω  (periodo)
+                         f = 1/T   (frecuencia)
+<small>La velocidad es siempre tangente a la circunferencia; la aceleración apunta al centro (centrípeta).</small></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2 class="kicker">Parámetros</h2>
+      <div class="field">
+        <label>Radio · R <b id="lblR">12 m</b></label>
+        <input type="range" id="R" min="4" max="18" value="12" step="1" />
+      </div>
+      <div class="field">
+        <label>Velocidad angular · ω <b id="lblW">1.4 rad/s</b></label>
+        <input type="range" id="W" min="0.3" max="3" value="1.4" step="0.1" />
+      </div>
+      <div class="field">
+        <label>Velocidad de animación <b id="lblSpeed">1.0×</b></label>
+        <input type="range" id="speed" min="0.1" max="2" value="1" step="0.1" />
+      </div>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Iniciar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>Ángulo θ</span><b id="outAng">0°</b></div>
+        <div class="readout"><span>Rapidez v = ωR</span><b id="outV">0 m/s</b></div>
+        <div class="readout"><span>Periodo T</span><b id="outT">0 s</b></div>
+        <div class="readout"><span>Frecuencia f</span><b id="outF">0 Hz</b></div>
+      </div>
+      <div class="panel"><canvas id="stage" width="700" height="440"></canvas></div>
+    </section>
+  </div>
+
+  <section class="usecase">
+    <span class="badge">Uso en Ingeniería del Software</span>
+    <h2>Enemigos que orbitan a un jefe en un juego «bullet-hell»</h2>
+    <p class="lead">
+      En juegos como <em>Enter the Gungeon</em> o <em>Undertale</em>, satélites o drones giran alrededor de un
+      jefe central, manteniendo una distancia fija mientras disparan. Su posición se genera matemáticamente,
+      no se anima a mano.
+    </p>
+    <div class="uc-item">
+      <div class="n">i</div>
+      <div><h4>Caso específico</h4>
+      <p>Colocar N drones equiespaciados orbitando a un jefe: cada frame se recalcula la posición (x, y) de
+      cada dron a partir de un ángulo que avanza a velocidad angular constante.</p></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">ii</div>
+      <div><h4>Concepto físico aplicado</h4>
+      <p>Ecuaciones paramétricas del MCU; el dron <code>i</code> de un total <code>N</code> lleva un desfase:</p>
+      <div class="formula">θᵢ(t) = ω·t + (2π·i / N)
+xᵢ = cx + R·cos(θᵢ)      yᵢ = cy + R·sen(θᵢ)</div></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">iii</div>
+      <div><h4>Justificación</h4>
+      <p>Frente a animaciones precalculadas (keyframes), las funciones trigonométricas permiten cambiar
+      <strong>radio y velocidad en tiempo de ejecución</strong> —por ejemplo, hacer que los drones se acerquen
+      en espiral subiendo la dificultad— con una sola fórmula y movimiento perfectamente suave, sin almacenar
+      ni interpolar cientos de fotogramas.</p></div>
+    </div>
+    <div class="tech"><span>Game loop</span><span>Math.cos / Math.sin</span><span>Spawn de enemigos</span><span>Movimiento orbital</span></div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const st = { R:12, w:1.4, speed:1, t:0, running:false, lastTs:null };
+  const stage = $("stage"), ctx = stage.getContext("2d");
+  const Rel=$("R"), Wel=$("W"), Sel=$("speed");
+
+  function sync(){
+    st.R=+Rel.value; st.w=+Wel.value; st.speed=+Sel.value;
+    $("lblR").textContent=st.R+" m"; $("lblW").textContent=st.w.toFixed(1)+" rad/s";
+    $("lblSpeed").textContent=st.speed.toFixed(1)+"×";
+    $("outV").textContent=(st.w*st.R).toFixed(1)+" m/s";
+    $("outT").textContent=(2*Math.PI/st.w).toFixed(2)+" s";
+    $("outF").textContent=(st.w/(2*Math.PI)).toFixed(2)+" Hz";
+  }
+  [Rel,Wel,Sel].forEach(e=>e.addEventListener("input",sync));
+
+  const PXM = 13; // px por metro
+  function render(){
+    const W=stage.width,H=stage.height,cx=W/2,cy=H/2,R=st.R*PXM;
+    ctx.clearRect(0,0,W,H);
+    // Circunferencia
+    ctx.strokeStyle="#334155"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+    // Centro
+    ctx.fillStyle="#64748b"; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+
+    const a = st.w*st.t;
+    const px = cx + R*Math.cos(a), py = cy - R*Math.sin(a);
+    // Radio
+    ctx.strokeStyle="#475569"; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(px,py); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle="#94a3b8"; ctx.font="italic 12px 'SF Mono',monospace";
+    ctx.fillText("R", (cx+px)/2+6, (cy+py)/2);
+
+    // Vector velocidad (tangente): dirección perpendicular al radio
+    const vlen = Math.min(st.w*st.R*3.2, 90);
+    const tx = -Math.sin(a), ty = -Math.cos(a); // tangente en pantalla (y invertida)
+    drawArrow(px,py, px+tx*vlen, py+ty*vlen, "#22c55e", "v⃗");
+    // Vector aceleración centrípeta (hacia el centro)
+    const aclen = Math.min(st.w*st.w*st.R*1.4, 70);
+    const ux=(cx-px), uy=(cy-py), un=Math.hypot(ux,uy);
+    drawArrow(px,py, px+ux/un*aclen, py+uy/un*aclen, "#fbbf24", "a⃗c");
+    // Partícula
+    const grd=ctx.createRadialGradient(px-3,py-3,1,px,py,11);
+    grd.addColorStop(0,"#7dd3fc"); grd.addColorStop(1,"#0284c7");
+    ctx.beginPath(); ctx.arc(px,py,10,0,Math.PI*2); ctx.fillStyle=grd; ctx.fill();
+
+    $("outAng").textContent = ((a*180/Math.PI)%360).toFixed(0)+"°";
+  }
+  function drawArrow(x1,y1,x2,y2,color,label){
+    ctx.strokeStyle=color; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const ang=Math.atan2(y2-y1,x2-x1);
+    ctx.beginPath(); ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-9*Math.cos(ang-0.4), y2-9*Math.sin(ang-0.4));
+    ctx.lineTo(x2-9*Math.cos(ang+0.4), y2-9*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+    ctx.font="italic 12px 'SF Mono',monospace"; ctx.fillStyle=color;
+    ctx.fillText(label, x2+5, y2+4);
+  }
+
+  function reset(){ st.running=false; st.t=0; st.lastTs=null; $("playBtn").textContent="▶ Iniciar"; render(); }
+  function toggle(){
+    if(st.running){ st.running=false; $("playBtn").textContent="▶ Reanudar"; }
+    else { st.running=true; st.lastTs=null; $("playBtn").textContent="❚❚ Pausar"; requestAnimationFrame(loop); }
+  }
+  function loop(ts){
+    if(!st.running) return;
+    if(st.lastTs===null) st.lastTs=ts;
+    st.t += ((ts-st.lastTs)/1000)*st.speed; st.lastTs=ts;
+    render(); if(st.running) requestAnimationFrame(loop);
+  }
+  $("playBtn").addEventListener("click",toggle);
+  $("resetBtn").addEventListener("click",reset);
+  sync(); reset();
+})();
+</script>
+</body>
+</html>

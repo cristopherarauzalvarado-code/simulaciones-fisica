@@ -1,0 +1,129 @@
+/* ===========================================================
+   Sistema de diseño compartido · Portafolio de Física I
+   Ingeniería del Software
+   =========================================================== */
+:root {
+  --bg: #0f172a; --panel: #1e293b; --panel-2: #273449; --border: #334155;
+  --text: #e2e8f0; --muted: #94a3b8; --accent: #38bdf8; --accent-2: #22c55e;
+  --danger: #f87171; --warn: #fbbf24; --violet: #a78bfa;
+}
+* { box-sizing: border-box; margin: 0; padding: 0; }
+body {
+  font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
+  background: radial-gradient(circle at 20% 0%, #16233f, var(--bg));
+  color: var(--text); min-height: 100vh; padding: 24px;
+}
+a { color: var(--accent); }
+
+.topbar { max-width: 1100px; margin: 0 auto 16px; font-size: 0.9rem; }
+header { text-align: center; margin-bottom: 24px; }
+header h1 { font-size: 1.6rem; font-weight: 600; }
+header h1 span { color: var(--accent); }
+header p { color: var(--muted); margin-top: 6px; font-size: 0.95rem; }
+
+.container { max-width: 1100px; margin: 0 auto; }
+
+.panel { background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 20px; }
+.panel > h2.kicker { font-size: 0.8rem; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin-bottom: 16px; }
+
+/* ---------- Layout de simulación ---------- */
+.layout { display: grid; grid-template-columns: 340px 1fr; gap: 20px; max-width: 1100px; margin: 0 auto; }
+@media (max-width: 860px) { .layout { grid-template-columns: 1fr; } }
+.stage-wrap { display: grid; gap: 20px; }
+
+.field { margin-bottom: 16px; }
+.field label { display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 8px; }
+.field label b { color: var(--accent); font-variant-numeric: tabular-nums; }
+input[type="range"] { width: 100%; accent-color: var(--accent); }
+select { width: 100%; padding: 10px; background: var(--panel-2); color: var(--text); border: 1px solid var(--border); border-radius: 8px; font-size: 0.95rem; font-family: inherit; }
+.hint { font-size: 0.75rem; color: var(--muted); margin-top: 4px; }
+
+.buttons { display: flex; gap: 10px; margin-top: 8px; }
+button { flex: 1; padding: 10px; border: none; border-radius: 10px; font-size: 0.9rem; font-weight: 600; cursor: pointer; transition: transform 0.08s; }
+button:active { transform: scale(0.96); }
+.btn-play { background: var(--accent-2); color: #052e16; }
+.btn-reset { background: var(--panel-2); color: var(--text); border: 1px solid var(--border); }
+
+.readouts { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; }
+@media (max-width: 560px) { .readouts { grid-template-columns: repeat(2, 1fr); } }
+.readout { background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 12px; text-align: center; }
+.readout span { display: block; font-size: 0.7rem; color: var(--muted); text-transform: uppercase; letter-spacing: 0.05em; }
+.readout b { font-size: 1.2rem; font-variant-numeric: tabular-nums; }
+.readout.up b { color: #86efac; } .readout.down b { color: #fca5a5; }
+
+canvas { display: block; width: 100%; border-radius: 12px; background: var(--panel-2); }
+.graphs { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 760px) { .graphs { grid-template-columns: 1fr; } }
+.graph-title { font-size: 0.78rem; color: var(--muted); margin-bottom: 8px; }
+
+/* ---------- Teoría / concepto ---------- */
+.theory { max-width: 1100px; margin: 28px auto 0; }
+.theory .panel { padding: 28px; }
+.theory h2 { font-size: 1.2rem; color: var(--text); margin-bottom: 14px; }
+.theory h3 { font-size: 1rem; color: var(--accent); margin: 22px 0 8px; }
+.theory p { color: #cbd5e1; line-height: 1.7; margin-bottom: 12px; }
+.theory ul, .theory ol { color: #cbd5e1; line-height: 1.7; margin: 0 0 12px 20px; }
+.formula {
+  background: var(--panel-2); border: 1px solid var(--border); border-left: 3px solid var(--accent);
+  border-radius: 8px; padding: 14px 16px; margin: 12px 0; font-family: "SF Mono", ui-monospace, monospace;
+  font-size: 0.95rem; overflow-x: auto; white-space: pre-wrap;
+}
+.formula small { color: var(--muted); display: block; margin-top: 6px; font-family: inherit; }
+code { background: var(--panel-2); padding: 2px 6px; border-radius: 5px; font-family: "SF Mono", ui-monospace, monospace; font-size: 0.88em; }
+.grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+@media (max-width: 700px) { .grid2 { grid-template-columns: 1fr; } }
+table { width: 100%; border-collapse: collapse; margin: 8px 0; font-size: 0.9rem; }
+th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+th { color: var(--muted); font-weight: 600; }
+td code { background: none; padding: 0; color: #7dd3fc; }
+
+/* ---------- Caja de "Uso en Ingeniería del Software" ---------- */
+.usecase {
+  max-width: 1100px; margin: 28px auto 0;
+  background: linear-gradient(135deg, #1a2333, #1e293b);
+  border: 1px solid var(--border); border-left: 4px solid var(--violet);
+  border-radius: 14px; padding: 28px;
+}
+.usecase .badge {
+  display: inline-block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.08em;
+  background: rgba(167,139,250,0.15); color: var(--violet); padding: 4px 10px; border-radius: 6px; margin-bottom: 12px;
+}
+.usecase h2 { font-size: 1.2rem; margin-bottom: 6px; }
+.usecase .lead { color: #cbd5e1; line-height: 1.7; margin-bottom: 18px; }
+.uc-item { display: grid; grid-template-columns: 28px 1fr; gap: 12px; margin-bottom: 16px; align-items: start; }
+.uc-item .n {
+  width: 28px; height: 28px; border-radius: 50%; background: rgba(167,139,250,0.18); color: var(--violet);
+  display: flex; align-items: center; justify-content: center; font-weight: 700; font-size: 0.85rem;
+}
+.uc-item h4 { font-size: 0.95rem; color: var(--text); margin-bottom: 4px; }
+.uc-item p { color: #cbd5e1; line-height: 1.65; font-size: 0.92rem; }
+.uc-item .formula { margin: 8px 0 0; }
+.tech { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 16px; }
+.tech span { font-size: 0.72rem; background: var(--panel-2); border: 1px solid var(--border); color: #7dd3fc; padding: 4px 10px; border-radius: 20px; }
+
+/* ---------- Portada / índice ---------- */
+.intro { max-width: 1100px; margin: 0 auto 28px; }
+.intro p { color: var(--muted); line-height: 1.7; }
+.week { max-width: 1100px; margin: 0 auto 26px; }
+.week-head { display: flex; align-items: baseline; gap: 12px; margin-bottom: 14px; padding-bottom: 8px; border-bottom: 1px solid var(--border); }
+.week-head .num {
+  font-size: 0.72rem; font-weight: 700; letter-spacing: 0.05em; text-transform: uppercase;
+  background: var(--accent); color: #052e16; padding: 4px 10px; border-radius: 6px;
+}
+.week-head h2 { font-size: 1.15rem; font-weight: 600; }
+.week-head .mod { color: var(--muted); font-size: 0.85rem; margin-left: auto; }
+.cards { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+@media (max-width: 700px) { .cards { grid-template-columns: 1fr; } }
+.card {
+  display: block; text-decoration: none; color: inherit; background: var(--panel);
+  border: 1px solid var(--border); border-radius: 14px; padding: 20px;
+  transition: border-color 0.2s, transform 0.08s;
+}
+.card:hover { border-color: var(--accent); transform: translateY(-2px); }
+.card .tag {
+  display: inline-block; font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.06em;
+  background: var(--panel-2); color: var(--accent); padding: 3px 8px; border-radius: 6px; margin-bottom: 10px;
+}
+.card h3 { font-size: 1.05rem; margin-bottom: 6px; }
+.card p { color: var(--muted); font-size: 0.88rem; line-height: 1.55; }
+.card .meta { margin-top: 10px; font-size: 0.75rem; color: var(--violet); }

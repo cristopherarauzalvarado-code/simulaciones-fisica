@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Movimiento en 3 Dimensiones · Física I</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver al portafolio</a></div>
+
+  <header>
+    <h1>Movimiento en <span>3 Dimensiones</span></h1>
+    <p>Semana 2 · Cinemática — la posición como vector r(t) = (x, y, z)</p>
+  </header>
+
+  <!-- Concepto -->
+  <section class="theory">
+    <div class="panel">
+      <h2>El concepto físico</h2>
+      <p>
+        En tres dimensiones la posición de un cuerpo es un <strong>vector</strong>
+        <code>r⃗(t) = x(t) î + y(t) ĵ + z(t) k̂</code>. La clave del movimiento en 3D es que
+        <strong>cada eje es independiente</strong>: la gravedad solo afecta el eje vertical, mientras
+        que los ejes horizontales mantienen velocidad constante (si no hay otra fuerza).
+      </p>
+      <div class="formula">x(t) = x₀ + v₀ₓ·t
+y(t) = y₀ + v₀ᵧ·t − ½·g·t²      ← solo aquí actúa la gravedad
+z(t) = z₀ + v₀𝓏·t
+<small>Cada componente se integra por separado; el movimiento real es la suma vectorial de los tres.</small></div>
+    </div>
+  </section>
+
+  <!-- Simulación -->
+  <div class="layout">
+    <aside class="panel">
+      <h2 class="kicker">Velocidad inicial (m/s)</h2>
+      <div class="field">
+        <label>v₀ₓ · este <b id="lblVx">14 m/s</b></label>
+        <input type="range" id="vx" min="0" max="30" value="14" step="1" />
+      </div>
+      <div class="field">
+        <label>v₀ᵧ · arriba <b id="lblVy">20 m/s</b></label>
+        <input type="range" id="vy" min="2" max="35" value="20" step="1" />
+      </div>
+      <div class="field">
+        <label>v₀𝓏 · norte <b id="lblVz">9 m/s</b></label>
+        <input type="range" id="vz" min="0" max="30" value="9" step="1" />
+      </div>
+      <div class="field">
+        <label>Velocidad de animación <b id="lblSpeed">0.6×</b></label>
+        <input type="range" id="speed" min="0.1" max="2" value="0.6" step="0.1" />
+      </div>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Lanzar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>x (este)</span><b id="outX">0.0 m</b></div>
+        <div class="readout"><span>y (altura)</span><b id="outY">0.0 m</b></div>
+        <div class="readout"><span>z (norte)</span><b id="outZ">0.0 m</b></div>
+        <div class="readout"><span>alcance |r|</span><b id="outR">0.0 m</b></div>
+      </div>
+      <div class="panel"><canvas id="stage" width="700" height="440"></canvas></div>
+    </section>
+  </div>
+
+  <!-- Uso en Ingeniería del Software -->
+  <section class="usecase">
+    <span class="badge">Uso en Ingeniería del Software</span>
+    <h2>Trayectoria de un proyectil en un shooter 3D</h2>
+    <p class="lead">
+      En un FPS como <em>Halo</em> o <em>Call of Duty</em>, una granada lanzada debe volar de forma realista
+      por el escenario tridimensional, rebotar y caer donde la física lo dicte —no donde un diseñador lo haya
+      marcado a mano.
+    </p>
+    <div class="uc-item">
+      <div class="n">i</div>
+      <div>
+        <h4>Caso específico</h4>
+        <p>Cálculo en cada frame de la posición de una granada lanzada por el jugador en un mapa 3D, para
+        dibujar el arco de lanzamiento y detectar dónde impactará contra el suelo o una pared.</p>
+      </div>
+    </div>
+    <div class="uc-item">
+      <div class="n">ii</div>
+      <div>
+        <h4>Concepto físico aplicado</h4>
+        <p>Se descompone la velocidad inicial en sus tres componentes y se integra cada eje por separado:</p>
+        <div class="formula">r⃗(t) = r⃗₀ + v⃗₀·t + ½·a⃗·t²    con  a⃗ = (0, −g, 0)</div>
+      </div>
+    </div>
+    <div class="uc-item">
+      <div class="n">iii</div>
+      <div>
+        <h4>Justificación</h4>
+        <p>Una trayectoria precalculada (animación fija) se rompe si cambia la posición del jugador, la
+        fuerza del lanzamiento o aparece viento. Calcular <code>r⃗(t)</code> con la ecuación cinemática hace
+        que <strong>la misma fórmula sirva para infinitas situaciones</strong>: el motor predice el punto de
+        impacto resolviendo <code>y(t)=0</code> y lo usa para mostrar el indicador de aterrizaje en tiempo
+        real, algo imposible con valores fijos.</p>
+      </div>
+    </div>
+    <div class="tech">
+      <span>Unity / Unreal</span><span>Físicas de proyectiles</span><span>Vector3</span><span>Detección de impacto</span>
+    </div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = (id) => document.getElementById(id);
+  const g = 9.81;
+  const st = { vx:14, vy:20, vz:9, speed:0.6, t:0, tFly:1, running:false, lastTs:null };
+
+  const stage = $("stage"), ctx = stage.getContext("2d");
+  const els = ["vx","vy","vz","speed"].map($);
+  const lbl = { vx:$("lblVx"), vy:$("lblVy"), vz:$("lblVz"), speed:$("lblSpeed") };
+
+  const xAt = t => st.vx * t;
+  const yAt = t => Math.max(0, st.vy * t - 0.5 * g * t * t);
+  const zAt = t => st.vz * t;
+
+  function sync() {
+    st.vx = +els[0].value; st.vy = +els[1].value; st.vz = +els[2].value; st.speed = +els[3].value;
+    lbl.vx.textContent = st.vx + " m/s"; lbl.vy.textContent = st.vy + " m/s";
+    lbl.vz.textContent = st.vz + " m/s"; lbl.speed.textContent = st.speed.toFixed(1) + "×";
+    st.tFly = (2 * st.vy) / g;
+  }
+  els.forEach(e => e.addEventListener("input", () => { sync(); if (e.id!=="speed") reset(); }));
+
+  // Proyección isométrica: mundo (x este, y arriba, z norte) -> pantalla
+  const A = 0.55, scale = 6;
+  function project(x, y, z) {
+    const ox = stage.width * 0.5, oy = stage.height - 70;
+    const sx = ox + (x - z) * Math.cos(A) * scale;
+    const sy = oy + ((x + z) * Math.sin(A) - y) * scale;
+    return [sx, sy];
+  }
+
+  function drawGround() {
+    ctx.strokeStyle = "#2b3a52"; ctx.lineWidth = 1;
+    for (let i = 0; i <= 50; i += 10) {
+      let p1 = project(i, 0, 0), p2 = project(i, 0, 50);
+      ctx.beginPath(); ctx.moveTo(p1[0], p1[1]); ctx.lineTo(p2[0], p2[1]); ctx.stroke();
+      let p3 = project(0, 0, i), p4 = project(50, 0, i);
+      ctx.beginPath(); ctx.moveTo(p3[0], p3[1]); ctx.lineTo(p4[0], p4[1]); ctx.stroke();
+    }
+    // Ejes
+    const axes = [["x · este","#38bdf8",[50,0,0]],["y · altura","#22c55e",[0,40,0]],["z · norte","#fbbf24",[0,0,50]]];
+    const o = project(0,0,0);
+    axes.forEach(([name,c,e]) => {
+      const p = project(e[0],e[1],e[2]);
+      ctx.strokeStyle = c; ctx.lineWidth = 2;
+      ctx.beginPath(); ctx.moveTo(o[0],o[1]); ctx.lineTo(p[0],p[1]); ctx.stroke();
+      ctx.fillStyle = c; ctx.font = "italic 12px 'SF Mono',monospace"; ctx.textAlign = "left";
+      ctx.fillText(name, p[0]+4, p[1]);
+    });
+  }
+
+  function render() {
+    ctx.clearRect(0,0,stage.width,stage.height);
+    drawGround();
+    // Trayectoria completa
+    ctx.strokeStyle = "rgba(125,211,252,0.5)"; ctx.lineWidth = 2; ctx.beginPath();
+    const N = 120;
+    for (let i=0;i<=N;i++){ const t=(i/N)*st.tFly; const p=project(xAt(t),yAt(t),zAt(t)); i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]); }
+    ctx.stroke();
+
+    const x=xAt(st.t), y=yAt(st.t), z=zAt(st.t);
+    // Sombra en el suelo
+    const sh = project(x,0,z);
+    ctx.fillStyle = "rgba(0,0,0,0.35)"; ctx.beginPath(); ctx.ellipse(sh[0],sh[1],8,4,0,0,Math.PI*2); ctx.fill();
+    // Línea vertical proyectil->sombra
+    const pp = project(x,y,z);
+    ctx.strokeStyle = "rgba(148,163,184,0.4)"; ctx.setLineDash([3,3]);
+    ctx.beginPath(); ctx.moveTo(pp[0],pp[1]); ctx.lineTo(sh[0],sh[1]); ctx.stroke(); ctx.setLineDash([]);
+    // Proyectil
+    const grd = ctx.createRadialGradient(pp[0]-3,pp[1]-3,1,pp[0],pp[1],11);
+    grd.addColorStop(0,"#fca5a5"); grd.addColorStop(1,"#dc2626");
+    ctx.beginPath(); ctx.arc(pp[0],pp[1],9,0,Math.PI*2); ctx.fillStyle=grd; ctx.fill();
+
+    $("outX").textContent = x.toFixed(1)+" m";
+    $("outY").textContent = y.toFixed(1)+" m";
+    $("outZ").textContent = z.toFixed(1)+" m";
+    $("outR").textContent = Math.hypot(x,y,z).toFixed(1)+" m";
+  }
+
+  function reset(){ st.running=false; st.t=0; st.lastTs=null; $("playBtn").textContent="▶ Lanzar"; render(); }
+  function toggle(){
+    if(st.running){ st.running=false; $("playBtn").textContent="▶ Reanudar"; }
+    else { if(st.t>=st.tFly) st.t=0; st.running=true; st.lastTs=null; $("playBtn").textContent="❚❚ Pausar"; requestAnimationFrame(loop); }
+  }
+  function loop(ts){
+    if(!st.running) return;
+    if(st.lastTs===null) st.lastTs=ts;
+    st.t += ((ts-st.lastTs)/1000)*st.speed; st.lastTs=ts;
+    if(st.t>=st.tFly){ st.t=st.tFly; st.running=false; $("playBtn").textContent="▶ Lanzar"; }
+    render(); if(st.running) requestAnimationFrame(loop);
+  }
+  $("playBtn").addEventListener("click", toggle);
+  $("resetBtn").addEventListener("click", reset);
+  sync(); reset();
+})();
+</script>
+</body>
+</html>

@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fuerza Elástica · Física I</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver al portafolio</a></div>
+
+  <header>
+    <h1>Fuerza Elástica · <span>Ley de Hooke</span></h1>
+    <p>Semana 3 · Dinámica — el resorte que devuelve un cuerpo a su posición de equilibrio</p>
+  </header>
+
+  <section class="theory">
+    <div class="panel">
+      <h2>El concepto físico</h2>
+      <p>
+        Un resorte ejerce una fuerza <strong>proporcional a su deformación</strong> y dirigida en sentido
+        contrario (fuerza restauradora). Con amortiguación (rozamiento) el sistema oscila con amplitud
+        decreciente hasta detenerse: es el <strong>oscilador armónico amortiguado</strong>.
+      </p>
+      <div class="formula">F = −k·x                    ← Ley de Hooke (k = constante elástica)
+F_amortiguación = −c·v       ← se opone a la velocidad
+m·a = −k·x − c·v             ← 2ª ley de Newton del sistema
+<small>k grande → resorte rígido y rápido · c grande → se frena antes y casi no rebota.</small></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2 class="kicker">Parámetros del resorte</h2>
+      <div class="field">
+        <label>Constante elástica · k <b id="lblK">40 N/m</b></label>
+        <input type="range" id="K" min="5" max="120" value="40" step="1" />
+      </div>
+      <div class="field">
+        <label>Masa · m <b id="lblM">1.0 kg</b></label>
+        <input type="range" id="M" min="0.2" max="4" value="1" step="0.1" />
+      </div>
+      <div class="field">
+        <label>Amortiguación · c <b id="lblC">1.5 N·s/m</b></label>
+        <input type="range" id="C" min="0" max="12" value="1.5" step="0.1" />
+      </div>
+      <div class="field">
+        <label>Estiramiento inicial · x₀ <b id="lblX0">1.5 m</b></label>
+        <input type="range" id="X0" min="-2.5" max="2.5" value="1.5" step="0.1" />
+      </div>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Soltar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>Posición x</span><b id="outX">0.00 m</b></div>
+        <div class="readout"><span>Fuerza F=−kx</span><b id="outF">0.0 N</b></div>
+        <div class="readout"><span>Velocidad v</span><b id="outV">0.0 m/s</b></div>
+        <div class="readout"><span>Régimen</span><b id="outReg">—</b></div>
+      </div>
+      <div class="panel"><canvas id="stage" width="700" height="200"></canvas></div>
+      <div class="panel">
+        <div class="graph-title">Posición x–t (oscilación amortiguada)</div>
+        <canvas id="graph" width="700" height="200"></canvas>
+      </div>
+    </section>
+  </div>
+
+  <section class="usecase">
+    <span class="badge">Uso en Ingeniería del Software</span>
+    <h2>Animaciones «spring» al soltar una tarjeta (drag &amp; drop)</h2>
+    <p class="lead">
+      Cuando arrastras una tarjeta en una app móvil y la sueltas, vuelve a su sitio con un rebote natural.
+      Librerías como <em>React Spring</em>, <em>Framer Motion</em> o <em>iOS UIKit Dynamics</em> no usan curvas
+      fijas: simulan un resorte real.
+    </p>
+    <div class="uc-item">
+      <div class="n">i</div>
+      <div><h4>Caso específico</h4>
+      <p>Una tarjeta arrastrable que, al soltarse, regresa a su posición de reposo con un rebote suave; cada
+      frame se integra un modelo masa-resorte-amortiguador para obtener la nueva posición en pantalla.</p></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">ii</div>
+      <div><h4>Concepto físico aplicado</h4>
+      <p>Se resuelve numéricamente (Euler semi-implícito) la ecuación del oscilador amortiguado:</p>
+      <div class="formula">a = (−k·x − c·v) / m
+v ← v + a·Δt        x ← x + v·Δt   (cada frame)</div></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">iii</div>
+      <div><h4>Justificación</h4>
+      <p>Una curva de easing precalculada (<code>cubic-bezier</code>) tiene duración fija y se ve rígida si la
+      animación se <strong>interrumpe</strong> a media marcha. El modelo físico arranca desde cualquier
+      posición y velocidad actuales —por eso si el usuario «atrapa» la tarjeta en pleno rebote, la respuesta
+      sigue siendo fluida y continua. Ajustando <code>k</code> y <code>c</code> el diseñador define la
+      «personalidad» (ágil, gelatinoso, firme) con dos números en vez de dibujar curvas.</p></div>
+    </div>
+    <div class="tech"><span>React Spring</span><span>Framer Motion</span><span>iOS UIKit Dynamics</span><span>Integración numérica</span></div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const st = { k:40, m:1, c:1.5, x0:1.5, x:1.5, v:0, t:0, running:false, lastTs:null, hist:[] };
+  const stage=$("stage"), sctx=stage.getContext("2d");
+  const graph=$("graph"), gctx=graph.getContext("2d");
+  const Kel=$("K"),Mel=$("M"),Cel=$("C"),X0el=$("X0");
+
+  function regime(){
+    const crit = 2*Math.sqrt(st.k*st.m);
+    if(st.c < crit-0.01) return "Subamortiguado";
+    if(st.c > crit+0.01) return "Sobreamortiguado";
+    return "Crítico";
+  }
+  function sync(){
+    st.k=+Kel.value; st.m=+Mel.value; st.c=+Cel.value; st.x0=+X0el.value;
+    $("lblK").textContent=st.k+" N/m"; $("lblM").textContent=st.m.toFixed(1)+" kg";
+    $("lblC").textContent=st.c.toFixed(1)+" N·s/m"; $("lblX0").textContent=st.x0.toFixed(1)+" m";
+    $("outReg").textContent=regime();
+  }
+  [Kel,Mel,Cel,X0el].forEach(e=>e.addEventListener("input",()=>{sync(); reset();}));
+
+  const PXM=70;
+  function drawStage(){
+    const W=stage.width,H=stage.height,wallX=70,cy=H/2;
+    sctx.clearRect(0,0,W,H);
+    // Pared
+    sctx.fillStyle="#475569"; sctx.fillRect(wallX-10,30,10,H-60);
+    // Línea de equilibrio
+    const eqX=wallX+220;
+    sctx.strokeStyle="#334155"; sctx.setLineDash([4,4]);
+    sctx.beginPath(); sctx.moveTo(eqX,20); sctx.lineTo(eqX,H-20); sctx.stroke(); sctx.setLineDash([]);
+    sctx.fillStyle="#64748b"; sctx.font="11px system-ui"; sctx.textAlign="center";
+    sctx.fillText("x = 0", eqX, H-6);
+
+    const bx = eqX + st.x*PXM, bsize=34;
+    // Resorte (zigzag)
+    sctx.strokeStyle="#7dd3fc"; sctx.lineWidth=2; sctx.beginPath();
+    sctx.moveTo(wallX,cy);
+    const coils=14, x1=wallX, x2=bx-bsize/2, span=x2-x1;
+    for(let i=0;i<=coils;i++){ const px=x1+(i/coils)*span; const py=cy+(i%2===0?0:(i===0||i===coils?0:-14)); sctx.lineTo(px, i===0||i===coils?cy:cy+(i%2?-14:14)); }
+    sctx.lineTo(x2,cy); sctx.stroke();
+    // Masa
+    sctx.fillStyle = st.x>=0 ? "#38bdf8" : "#f87171";
+    sctx.fillRect(bx-bsize/2, cy-bsize/2, bsize, bsize);
+    // Vector fuerza
+    const F=-st.k*st.x, flen=Math.max(-60,Math.min(60,F*1.2));
+    if(Math.abs(flen)>3){
+      sctx.strokeStyle="#fbbf24"; sctx.lineWidth=3;
+      sctx.beginPath(); sctx.moveTo(bx,cy); sctx.lineTo(bx+flen,cy); sctx.stroke();
+      const dir=Math.sign(flen);
+      sctx.beginPath(); sctx.moveTo(bx+flen,cy);
+      sctx.lineTo(bx+flen-dir*8,cy-5); sctx.lineTo(bx+flen-dir*8,cy+5); sctx.closePath();
+      sctx.fillStyle="#fbbf24"; sctx.fill();
+      sctx.fillStyle="#fcd34d"; sctx.font="italic 12px 'SF Mono',monospace"; sctx.textAlign="left";
+      sctx.fillText("F", bx+flen+dir*6, cy-6);
+    }
+    sctx.textAlign="left";
+  }
+  const SPAN=6; // segundos visibles en el gráfico
+  function drawGraph(){
+    const W=graph.width,H=graph.height,mid=H/2;
+    gctx.clearRect(0,0,W,H);
+    gctx.strokeStyle="#334155"; gctx.lineWidth=1;
+    gctx.beginPath(); gctx.moveTo(0,mid); gctx.lineTo(W,mid); gctx.stroke();
+    const t1=Math.max(SPAN, st.t), t0=t1-SPAN;
+    gctx.strokeStyle="#a78bfa"; gctx.lineWidth=2; gctx.beginPath();
+    let started=false;
+    st.hist.forEach(p=>{
+      if(p.t<t0) return;
+      const px=((p.t-t0)/SPAN)*W, py=mid - p.x*(mid-20)/2.6;
+      started?gctx.lineTo(px,py):gctx.moveTo(px,py); started=true;
+    });
+    gctx.stroke();
+  }
+  function refreshReadouts(){
+    $("outX").textContent=st.x.toFixed(2)+" m";
+    $("outF").textContent=(-st.k*st.x).toFixed(1)+" N";
+    $("outV").textContent=st.v.toFixed(1)+" m/s";
+  }
+
+  function reset(){
+    st.running=false; st.x=st.x0; st.v=0; st.t=0; st.lastTs=null; st.hist=[{t:0,x:st.x0}];
+    $("playBtn").textContent="▶ Soltar"; drawStage(); drawGraph(); refreshReadouts();
+  }
+  function toggle(){
+    if(st.running){ st.running=false; $("playBtn").textContent="▶ Reanudar"; }
+    else { st.running=true; st.lastTs=null; $("playBtn").textContent="❚❚ Pausar"; requestAnimationFrame(loop); }
+  }
+  function loop(ts){
+    if(!st.running) return;
+    if(st.lastTs===null) st.lastTs=ts;
+    let dt=(ts-st.lastTs)/1000; st.lastTs=ts; dt=Math.min(dt,0.033);
+    // sub-pasos para estabilidad
+    const steps=4, h=dt/steps;
+    for(let i=0;i<steps;i++){
+      const a=(-st.k*st.x - st.c*st.v)/st.m;
+      st.v += a*h; st.x += st.v*h; st.t += h;
+    }
+    st.hist.push({t:st.t, x:st.x});
+    // mantener solo la ventana visible (+ un poco de margen)
+    const tMin=st.t-SPAN-0.5;
+    while(st.hist.length>2 && st.hist[0].t<tMin) st.hist.shift();
+    drawStage(); drawGraph(); refreshReadouts();
+    if(st.running) requestAnimationFrame(loop);
+  }
+  $("playBtn").addEventListener("click",toggle);
+  $("resetBtn").addEventListener("click",reset);
+  sync(); reset();
+})();
+</script>
+</body>
+</html>

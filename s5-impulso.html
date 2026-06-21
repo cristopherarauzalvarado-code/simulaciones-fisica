@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Impulso y Propulsión a Chorro · Física I</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver al portafolio</a></div>
+
+  <header>
+    <h1>Impulso · <span>Propulsión a chorro</span></h1>
+    <p>Semana 5 · Leyes de Conservación — cómo expulsar masa genera empuje</p>
+  </header>
+
+  <section class="theory">
+    <div class="panel">
+      <h2>El concepto físico</h2>
+      <p>
+        El <strong>impulso</strong> es la fuerza aplicada durante un tiempo, e iguala el cambio en la cantidad
+        de movimiento (momento). Un cohete avanza por <strong>conservación del momento</strong>: expulsa gases
+        a gran velocidad hacia atrás y, como reacción, él gana momento hacia adelante.
+      </p>
+      <div class="formula">J = F·Δt = Δp = m·Δv          ← impulso = cambio de momento
+Empuje:  F = v_e · (dm/dt)        ← v_e = velocidad de escape de los gases
+Tsiolkovsky:  Δv = v_e · ln(m₀ / m_f)   ← Δv total al gastar el combustible
+<small>m₀ = masa inicial (con combustible) · m_f = masa final (vacío). Cuanto más combustible, mayor Δv.</small></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2 class="kicker">Diseño del cohete</h2>
+      <div class="field">
+        <label>Masa en seco · m_f <b id="lblMf">1000 kg</b></label>
+        <input type="range" id="Mf" min="400" max="2000" value="1000" step="50" />
+      </div>
+      <div class="field">
+        <label>Combustible <b id="lblFuel">3000 kg</b></label>
+        <input type="range" id="Fuel" min="500" max="6000" value="3000" step="100" />
+      </div>
+      <div class="field">
+        <label>Velocidad de escape · v_e <b id="lblVe">2500 m/s</b></label>
+        <input type="range" id="Ve" min="800" max="4500" value="2500" step="100" />
+      </div>
+      <div class="field">
+        <label>Tasa de quema <b id="lblRate">300 kg/s</b></label>
+        <input type="range" id="Rate" min="80" max="600" value="300" step="20" />
+      </div>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Encender</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>Combustible</span><b id="outFuel">0%</b></div>
+        <div class="readout"><span>Velocidad v</span><b id="outV">0 m/s</b></div>
+        <div class="readout"><span>Empuje F</span><b id="outF">0 kN</b></div>
+        <div class="readout"><span>Δv máx (Tsiolkovsky)</span><b id="outDv">0 m/s</b></div>
+      </div>
+      <div class="panel"><canvas id="stage" width="700" height="380"></canvas></div>
+    </section>
+  </div>
+
+  <section class="usecase">
+    <span class="badge">Uso en Ingeniería del Software</span>
+    <h2>Empuje de una nave en un juego espacial tipo Kerbal Space Program</h2>
+    <p class="lead">
+      En <em>Kerbal Space Program</em> el jugador diseña cohetes y la aceleración depende del combustible
+      restante: la nave empuja más fuerte conforme se vacía y se vuelve más ligera. Ese realismo viene de
+      simular impulso y momento, no una velocidad fija.
+    </p>
+    <div class="uc-item">
+      <div class="n">i</div>
+      <div><h4>Caso específico</h4>
+      <p>Calcular, frame a frame, la aceleración de una nave cuyo motor expulsa combustible: la masa total
+      disminuye mientras el empuje es constante, por lo que la aceleración crece a medida que se quema el
+      tanque.</p></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">ii</div>
+      <div><h4>Concepto físico aplicado</h4>
+      <p>Empuje a partir del flujo de masa e integración del cambio de velocidad (Tsiolkovsky):</p>
+      <div class="formula">F = v_e · (dm/dt)        a = F / m(t)
+Δv = v_e · ln( m₀ / m_f )</div></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">iii</div>
+      <div><h4>Justificación</h4>
+      <p>Si la nave usara una aceleración constante predefinida, llevar más combustible no aportaría nada e
+      incluso sería absurdo (más peso, igual rendimiento). Modelar el impulso hace que <strong>cada kilo de
+      combustible cuente y que la nave acelere más al vaciarse</strong>, dando profundidad de diseño: el
+      jugador optimiza la relación combustible/carga exactamente como un ingeniero aeroespacial real —imposible
+      con un valor de velocidad fijo.</p></div>
+    </div>
+    <div class="tech"><span>Kerbal Space Program</span><span>Conservación del momento</span><span>Ec. de Tsiolkovsky</span><span>Simulación de vuelo</span></div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const st = { mf:1000, fuel:3000, ve:2500, rate:300, m:0, v:0, burned:0, y:0, running:false, lastTs:null, parts:[] };
+  const stage=$("stage"), ctx=stage.getContext("2d");
+  const Mfel=$("Mf"),Fuel=$("Fuel"),Ve=$("Ve"),Rate=$("Rate");
+
+  const dvMax = () => st.ve*Math.log((st.mf+st.fuel)/st.mf);
+  function sync(){
+    st.mf=+Mfel.value; st.fuel=+Fuel.value; st.ve=+Ve.value; st.rate=+Rate.value;
+    $("lblMf").textContent=st.mf+" kg"; $("lblFuel").textContent=st.fuel+" kg";
+    $("lblVe").textContent=st.ve+" m/s"; $("lblRate").textContent=st.rate+" kg/s";
+    $("outDv").textContent=Math.round(dvMax()).toLocaleString()+" m/s";
+  }
+  [Mfel,Fuel,Ve,Rate].forEach(e=>e.addEventListener("input",()=>{sync(); reset();}));
+
+  function render(){
+    const W=stage.width,H=stage.height, baseX=W/2;
+    ctx.clearRect(0,0,W,H);
+    // Estrellas de fondo
+    ctx.fillStyle="#1e293b";
+    for(let i=0;i<40;i++){ const sx=(i*97)%W, sy=(i*53+st.y*8)%H; ctx.fillRect(sx,sy,2,2); }
+
+    const ry = H-90 - Math.min(st.y, H-200); // el cohete sube un poco y luego se "fija"
+    // Partículas de escape
+    st.parts.forEach(p=>{
+      ctx.globalAlpha=Math.max(0,p.life);
+      ctx.fillStyle = p.life>0.5 ? "#fbbf24" : "#f87171";
+      ctx.beginPath(); ctx.arc(p.x,p.y,p.r,0,Math.PI*2); ctx.fill();
+    });
+    ctx.globalAlpha=1;
+
+    // Cohete
+    ctx.save(); ctx.translate(baseX, ry);
+    ctx.fillStyle="#e2e8f0";
+    ctx.beginPath(); ctx.moveTo(0,-40); ctx.lineTo(13,-6); ctx.lineTo(13,28); ctx.lineTo(-13,28); ctx.lineTo(-13,-6); ctx.closePath(); ctx.fill();
+    ctx.fillStyle="#38bdf8"; ctx.beginPath(); ctx.arc(0,-2,6,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#94a3b8"; ctx.beginPath(); ctx.moveTo(-13,18); ctx.lineTo(-24,32); ctx.lineTo(-13,28); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(13,18); ctx.lineTo(24,32); ctx.lineTo(13,28); ctx.closePath(); ctx.fill();
+    // Llama si quema
+    if(st.running && st.burned<st.fuel){
+      ctx.fillStyle="#fb923c";
+      const fl=14+Math.random()*16;
+      ctx.beginPath(); ctx.moveTo(-7,28); ctx.lineTo(0,28+fl); ctx.lineTo(7,28); ctx.closePath(); ctx.fill();
+    }
+    ctx.restore();
+
+    // Tanque de combustible (barra lateral)
+    const pct=1-st.burned/st.fuel;
+    ctx.fillStyle="#334155"; ctx.fillRect(30,40,18,200);
+    ctx.fillStyle="#22c55e"; ctx.fillRect(30,40+200*(1-pct),18,200*pct);
+    ctx.fillStyle="#94a3b8"; ctx.font="11px system-ui"; ctx.textAlign="center";
+    ctx.fillText("⛽", 39, 255);
+    ctx.textAlign="left";
+
+    const m=st.mf+st.fuel-st.burned;
+    const thrust= (st.running && st.burned<st.fuel) ? st.ve*st.rate : 0;
+    $("outFuel").textContent=Math.max(0,pct*100).toFixed(0)+"%";
+    $("outV").textContent=Math.round(st.v).toLocaleString()+" m/s";
+    $("outF").textContent=Math.round(thrust/1000).toLocaleString()+" kN";
+  }
+
+  function reset(){
+    st.running=false; st.m=st.mf+st.fuel; st.v=0; st.burned=0; st.y=0; st.parts=[]; st.lastTs=null;
+    $("playBtn").textContent="▶ Encender"; render();
+  }
+  function toggle(){
+    if(st.running){ st.running=false; $("playBtn").textContent="▶ Reanudar"; }
+    else { if(st.burned>=st.fuel) reset(); st.running=true; st.lastTs=null; $("playBtn").textContent="❚❚ Apagar"; requestAnimationFrame(loop); }
+  }
+  function loop(ts){
+    if(!st.running) return;
+    if(st.lastTs===null) st.lastTs=ts;
+    let dt=Math.min((ts-st.lastTs)/1000,0.033); st.lastTs=ts;
+    if(st.burned<st.fuel){
+      const dm=Math.min(st.rate*dt, st.fuel-st.burned);
+      const m=st.mf+st.fuel-st.burned;
+      st.v += st.ve*(dm/m);     // Δv = v_e · dm/m  (impulso/momento)
+      st.burned += dm;
+      st.y += st.v*dt*0.02;
+      // emitir partículas
+      const baseX=stage.width/2, ry=stage.height-90-Math.min(st.y,stage.height-200);
+      for(let i=0;i<3;i++) st.parts.push({x:baseX+(Math.random()-0.5)*10, y:ry+30, r:2+Math.random()*3, vy:2+Math.random()*2, life:1});
+    }
+    st.parts.forEach(p=>{ p.y+=p.vy; p.life-=0.03; });
+    st.parts=st.parts.filter(p=>p.life>0);
+    render();
+    if(st.burned>=st.fuel && st.parts.length===0){ st.running=false; $("playBtn").textContent="↺ Reiniciar"; }
+    if(st.running) requestAnimationFrame(loop);
+  }
+  $("playBtn").addEventListener("click",toggle);
+  $("resetBtn").addEventListener("click",reset);
+  sync(); reset();
+})();
+</script>
+</body>
+</html>

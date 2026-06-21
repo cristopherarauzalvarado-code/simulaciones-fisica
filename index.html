@@ -3,72 +3,147 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Simulaciones · Física I</title>
-<style>
-  * { box-sizing: border-box; margin: 0; padding: 0; }
-  body {
-    font-family: "Segoe UI", system-ui, -apple-system, sans-serif;
-    background: radial-gradient(circle at 20% 0%, #16233f, #0f172a);
-    color: #e2e8f0;
-    min-height: 100vh;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    padding: 24px;
-  }
-  .wrap { max-width: 640px; width: 100%; }
-  h1 { font-size: 1.8rem; font-weight: 600; margin-bottom: 6px; }
-  h1 span { color: #38bdf8; }
-  .sub { color: #94a3b8; margin-bottom: 28px; }
-  .card {
-    display: block;
-    text-decoration: none;
-    color: inherit;
-    background: #1e293b;
-    border: 1px solid #334155;
-    border-radius: 14px;
-    padding: 20px;
-    margin-bottom: 14px;
-    transition: border-color 0.2s, transform 0.08s;
-  }
-  .card:hover { border-color: #38bdf8; transform: translateY(-2px); }
-  .card h2 { font-size: 1.1rem; margin-bottom: 6px; }
-  .card p { color: #94a3b8; font-size: 0.9rem; }
-  .tag {
-    display: inline-block;
-    font-size: 0.7rem;
-    text-transform: uppercase;
-    letter-spacing: 0.06em;
-    background: #273449;
-    color: #38bdf8;
-    padding: 3px 8px;
-    border-radius: 6px;
-    margin-bottom: 10px;
-  }
-</style>
+<title>Portafolio · Física I — Ingeniería del Software</title>
+<link rel="stylesheet" href="styles.css" />
 </head>
 <body>
-  <div class="wrap">
-    <h1>Simulaciones de <span>Física I</span></h1>
-    <p class="sub">Ingeniería del Software</p>
+  <header>
+    <h1>Portafolio de <span>Física I</span></h1>
+    <p>Ingeniería del Software · Avance 1 — Cinemática, Dinámica e inicio de Leyes de Conservación</p>
+  </header>
 
-    <a class="card" href="mru-vertical.html">
-      <span class="tag">MRU</span>
-      <h2>Movimiento Rectilíneo Uniforme Vertical</h2>
-      <p>Objeto a velocidad constante: y = y₀ + v·t, con gráficas y–t y v–t.</p>
-    </a>
-
-    <a class="card" href="movimiento-vertical.html">
-      <span class="tag">MRUV</span>
-      <h2>Cinemática del Movimiento Vertical</h2>
-      <p>Tiro vertical y caída libre bajo gravedad: v₀, y₀, g. Datos en tiempo real (altura, velocidad, altura máx, tiempos) y gráficas y–t, v–t, a–t.</p>
-    </a>
-
-    <a class="card" href="ecuaciones-tiempo.html">
-      <span class="tag">y(t)</span>
-      <h2>Ecuaciones dependientes del tiempo</h2>
-      <p>Escribe cualquier y(t) — MRU, MRUV, oscilador, exponencial — con velocidad y aceleración calculadas, gráficas y una sección de teoría.</p>
-    </a>
+  <div class="intro">
+    <p>
+      Cada entrada documenta un <strong>caso concreto donde el concepto físico se aplica al desarrollo de
+      software</strong> (motores físicos, videojuegos, animación de interfaces, simulación) e incluye un
+      <strong>elemento de apoyo</strong>: una simulación interactiva o una visualización. Los temas están
+      organizados según la tabla de seguimiento del profesor.
+    </p>
   </div>
+
+  <!-- ===== Semana 1 ===== -->
+  <section class="week">
+    <div class="week-head">
+      <span class="num">Semana 1</span>
+      <h2>Cinemática del movimiento rectilíneo</h2>
+      <span class="mod">Módulo · Cinemática</span>
+    </div>
+    <div class="cards">
+      <a class="card" href="mru-vertical.html">
+        <span class="tag">MRU</span>
+        <h3>Movimiento Rectilíneo Uniforme Vertical</h3>
+        <p>Objeto a velocidad constante: y = y₀ + v·t, con gráficas y–t y v–t.</p>
+        <div class="meta">▶ Simulación interactiva</div>
+      </a>
+      <a class="card" href="movimiento-vertical.html">
+        <span class="tag">MRUV</span>
+        <h3>Cinemática del Movimiento Vertical</h3>
+        <p>Tiro vertical y caída libre bajo gravedad: altura máx, tiempos y gráficas y–t, v–t, a–t.</p>
+        <div class="meta">▶ Simulación interactiva</div>
+      </a>
+      <a class="card" href="ecuaciones-tiempo.html">
+        <span class="tag">y(t)</span>
+        <h3>Ecuaciones dependientes del tiempo</h3>
+        <p>Escribe cualquier y(t) — MRU, MRUV, oscilador, exponencial — con velocidad y aceleración.</p>
+        <div class="meta">▶ Simulación interactiva</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== Semana 2 ===== -->
+  <section class="week">
+    <div class="week-head">
+      <span class="num">Semana 2</span>
+      <h2>Movimiento en 3D y circular</h2>
+      <span class="mod">Módulo · Cinemática</span>
+    </div>
+    <div class="cards">
+      <a class="card" href="s2-movimiento-3d.html">
+        <span class="tag">3D</span>
+        <h3>Movimiento en 3 Dimensiones</h3>
+        <p>Posición como vector r(t) descompuesto en X, Y, Z. Caso: proyectil en un shooter 3D.</p>
+        <div class="meta">◈ Visualización 3D interactiva</div>
+      </a>
+      <a class="card" href="s2-mcu.html">
+        <span class="tag">MCU</span>
+        <h3>Movimiento Circular Uniforme</h3>
+        <p>Órbita paramétrica x=R·cos(ωt), y=R·sin(ωt). Caso: enemigos que orbitan en un bullet-hell.</p>
+        <div class="meta">▶ Simulación interactiva</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== Semana 3 ===== -->
+  <section class="week">
+    <div class="week-head">
+      <span class="num">Semana 3</span>
+      <h2>Fuerzas: centrípeta y elástica</h2>
+      <span class="mod">Módulo · Dinámica</span>
+    </div>
+    <div class="cards">
+      <a class="card" href="s3-fuerza-centripeta.html">
+        <span class="tag">Fc</span>
+        <h3>Fuerza Centrípeta</h3>
+        <p>Fc = m·v²/r hacia el centro. Caso: derrape al tomar una curva en un juego de carreras.</p>
+        <div class="meta">◈ Visualización interactiva</div>
+      </a>
+      <a class="card" href="s3-fuerza-elastica.html">
+        <span class="tag">Hooke</span>
+        <h3>Fuerza Elástica (Ley de Hooke)</h3>
+        <p>F = −k·x con amortiguación. Caso: animaciones «spring» de UI (React Spring / iOS).</p>
+        <div class="meta">▶ Simulación interactiva</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== Semana 4 ===== -->
+  <section class="week">
+    <div class="week-head">
+      <span class="num">Semana 4</span>
+      <h2>Trabajo y energía</h2>
+      <span class="mod">Módulo · Leyes de Conservación</span>
+    </div>
+    <div class="cards">
+      <a class="card" href="s4-trabajo.html">
+        <span class="tag">W</span>
+        <h3>Trabajo</h3>
+        <p>W = F·d·cos(θ) (producto punto). Caso: empujar una caja en un puzzle físico tipo Half-Life.</p>
+        <div class="meta">◈ Visualización interactiva</div>
+      </a>
+      <a class="card" href="s4-energia.html">
+        <span class="tag">E</span>
+        <h3>Conservación de la Energía</h3>
+        <p>½mv² + mgh = cte. Caso: velocidad de un carro de montaña rusa en cada punto del riel.</p>
+        <div class="meta">▶ Simulación interactiva</div>
+      </a>
+    </div>
+  </section>
+
+  <!-- ===== Semana 5 ===== -->
+  <section class="week">
+    <div class="week-head">
+      <span class="num">Semana 5</span>
+      <h2>Impulso y colisiones</h2>
+      <span class="mod">Módulo · Leyes de Conservación</span>
+    </div>
+    <div class="cards">
+      <a class="card" href="s5-impulso.html">
+        <span class="tag">J = Δp</span>
+        <h3>Impulso (Propulsión a chorro)</h3>
+        <p>J = F·Δt = Δp y ecuación de Tsiolkovsky. Caso: empuje de una nave tipo Kerbal Space Program.</p>
+        <div class="meta">◈ Visualización interactiva</div>
+      </a>
+      <a class="card" href="s5-colisiones.html">
+        <span class="tag">Colisión</span>
+        <h3>Colisiones Inelásticas</h3>
+        <p>m₁v₁+m₂v₂=(m₁+m₂)v′. Caso: dos asteroides que chocan y quedan unidos en un motor 2D.</p>
+        <div class="meta">▶ Simulación interactiva</div>
+      </a>
+    </div>
+  </section>
+
+  <footer style="max-width:1100px;margin:24px auto 0;color:#64748b;font-size:0.8rem;text-align:center;">
+    Construido con HTML5 Canvas y JavaScript · Desplegado en Vercel
+  </footer>
 </body>
 </html>

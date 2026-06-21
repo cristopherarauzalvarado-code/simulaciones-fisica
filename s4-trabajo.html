@@ -1,0 +1,190 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Trabajo · Física I</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver al portafolio</a></div>
+
+  <header>
+    <h1>Trabajo <span>mecánico</span></h1>
+    <p>Semana 4 · Leyes de Conservación — energía transferida por una fuerza a lo largo de un desplazamiento</p>
+  </header>
+
+  <section class="theory">
+    <div class="panel">
+      <h2>El concepto físico</h2>
+      <p>
+        El trabajo mide cuánta energía transfiere una fuerza al mover un cuerpo. Solo cuenta la
+        <strong>componente de la fuerza en la dirección del desplazamiento</strong>: empujar en ángulo
+        «desperdicia» parte de la fuerza. Es el <strong>producto punto</strong> entre fuerza y desplazamiento.
+      </p>
+      <div class="formula">W = F⃗ · d⃗ = F·d·cos(θ)        [unidad: joule, J]
+<small>θ = 0° → trabajo máximo (W = F·d) · θ = 90° → W = 0 (no transfiere energía) · θ > 90° → trabajo negativo (frena).</small></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2 class="kicker">Fuerza aplicada</h2>
+      <div class="field">
+        <label>Módulo · F <b id="lblF">120 N</b></label>
+        <input type="range" id="F" min="10" max="300" value="120" step="5" />
+      </div>
+      <div class="field">
+        <label>Ángulo · θ <b id="lblTh">30°</b></label>
+        <input type="range" id="Th" min="0" max="150" value="30" step="1" />
+      </div>
+      <div class="field">
+        <label>Desplazamiento · d <b id="lblD">5 m</b></label>
+        <input type="range" id="D" min="1" max="9" value="5" step="0.5" />
+      </div>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Empujar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>F·cos θ (útil)</span><b id="outFx">0 N</b></div>
+        <div class="readout"><span>F·sen θ (perdida)</span><b id="outFy">0 N</b></div>
+        <div class="readout" id="rdW"><span>Trabajo W</span><b id="outW">0 J</b></div>
+        <div class="readout"><span>Eficiencia cos θ</span><b id="outEff">0%</b></div>
+      </div>
+      <div class="panel"><canvas id="stage" width="700" height="320"></canvas></div>
+    </section>
+  </div>
+
+  <section class="usecase">
+    <span class="badge">Uso en Ingeniería del Software</span>
+    <h2>Empujar una caja en un puzzle físico tipo Half-Life</h2>
+    <p class="lead">
+      En juegos como <em>Half-Life 2</em> o <em>Portal</em>, el jugador empuja cajas para resolver puzzles. El
+      motor (Havok) calcula cuánta energía aporta cada empujón según el ángulo, lo que decide si la caja se
+      mueve o se queda atascada.
+    </p>
+    <div class="uc-item">
+      <div class="n">i</div>
+      <div><h4>Caso específico</h4>
+      <p>Cuando el jugador empuja una caja con la «gravity gun» en una dirección que no es exactamente la del
+      suelo, el motor calcula el trabajo que realiza la componente horizontal de la fuerza para actualizar la
+      energía cinética de la caja.</p></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">ii</div>
+      <div><h4>Concepto físico aplicado</h4>
+      <p>Producto punto entre el vector fuerza y el vector desplazamiento; el resultado actualiza la energía:</p>
+      <div class="formula">W = F⃗ · d⃗ = Fₓ·dₓ + Fᵧ·dᵧ = F·d·cos(θ)
+ΔEc = W   (teorema trabajo–energía)</div></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">iii</div>
+      <div><h4>Justificación</h4>
+      <p>Asignar un valor fijo de energía por empujón daría un mundo irreal: empujar hacia abajo movería la
+      caja igual que empujar de frente. El producto punto hace que <strong>solo la componente alineada con el
+      movimiento transfiera energía</strong>, de modo que empujar en ángulo es naturalmente menos eficiente y
+      empujar perpendicular no hace nada —comportamiento físico emergente con una sola operación vectorial, sin
+      casos especiales programados.</p></div>
+    </div>
+    <div class="tech"><span>Havok / Box2D</span><span>Producto punto (dot)</span><span>Teorema trabajo–energía</span><span>Puzzle físico</span></div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const st = { F:120, th:30, d:5, prog:0, running:false, lastTs:null };
+  const stage=$("stage"), ctx=stage.getContext("2d");
+  const Fel=$("F"),Thel=$("Th"),Del=$("D");
+
+  const W = () => st.F*st.d*Math.cos(st.th*Math.PI/180);
+
+  function sync(){
+    st.F=+Fel.value; st.th=+Thel.value; st.d=+Del.value;
+    $("lblF").textContent=st.F+" N"; $("lblTh").textContent=st.th+"°"; $("lblD").textContent=st.d+" m";
+    const c=Math.cos(st.th*Math.PI/180), s=Math.sin(st.th*Math.PI/180);
+    $("outFx").textContent=(st.F*c).toFixed(0)+" N";
+    $("outFy").textContent=(st.F*s).toFixed(0)+" N";
+    $("outW").textContent=W().toFixed(0)+" J";
+    $("outEff").textContent=(c*100).toFixed(0)+"%";
+    $("rdW").className="readout "+(W()>0.5?"up":W()<-0.5?"down":"");
+    render();
+  }
+  [Fel,Thel,Del].forEach(e=>e.addEventListener("input",()=>{sync();}));
+
+  const PXM=58;
+  function render(){
+    const Wc=stage.width,H=stage.height, groundY=H-60, x0=90;
+    ctx.clearRect(0,0,Wc,H);
+    // Suelo
+    ctx.strokeStyle="#475569"; ctx.lineWidth=2;
+    ctx.beginPath(); ctx.moveTo(30,groundY); ctx.lineTo(Wc-20,groundY); ctx.stroke();
+    // Marca de desplazamiento
+    const bx = x0 + st.prog*st.d*PXM, box=46;
+    ctx.strokeStyle="#334155"; ctx.setLineDash([5,5]);
+    ctx.beginPath(); ctx.moveTo(x0,groundY+14); ctx.lineTo(x0+st.d*PXM,groundY+14); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle="#64748b"; ctx.font="12px system-ui"; ctx.textAlign="center";
+    ctx.fillText("d = "+st.d+" m", x0+st.d*PXM/2, groundY+30);
+    ctx.textAlign="left";
+
+    // Caja
+    const byTop=groundY-box;
+    ctx.fillStyle="#38bdf8"; ctx.fillRect(bx, byTop, box, box);
+    ctx.strokeStyle="#0ea5e9"; ctx.strokeRect(bx, byTop, box, box);
+    const cx=bx, cy=byTop+box/2; // punto de aplicación (cara izq.)
+
+    // Vector fuerza F (en ángulo, hacia arriba-derecha)
+    const rad=st.th*Math.PI/180, scale=0.42;
+    const fx=Math.cos(rad)*st.F*scale, fy=-Math.sin(rad)*st.F*scale;
+    arrow(cx,cy, cx+fx, cy+fy, "#a78bfa", 3, "F");
+    // Componente horizontal (útil)
+    arrow(cx,cy+58, cx+fx, cy+58, "#22c55e", 3, "F·cosθ");
+    // Componente vertical (perdida)
+    arrow(cx-58,cy, cx-58, cy+fy, "#f87171", 2, "F·senθ");
+    // Arco de ángulo
+    ctx.strokeStyle="#a78bfa"; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(cx,cy,26,-rad,0); ctx.stroke();
+    ctx.fillStyle="#c4b5fd"; ctx.font="italic 12px 'SF Mono',monospace";
+    ctx.fillText("θ", cx+30, cy-6);
+
+    // Etiqueta de trabajo acumulado
+    ctx.fillStyle="#cbd5e1"; ctx.font="13px system-ui"; ctx.textAlign="right";
+    ctx.fillText("W realizado: "+(W()*st.prog).toFixed(0)+" J", Wc-24, 28);
+    ctx.textAlign="left";
+  }
+  function arrow(x1,y1,x2,y2,color,lw,label){
+    if(Math.hypot(x2-x1,y2-y1)<2) return;
+    ctx.strokeStyle=color; ctx.lineWidth=lw;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const a=Math.atan2(y2-y1,x2-x1);
+    ctx.beginPath(); ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-9*Math.cos(a-0.4),y2-9*Math.sin(a-0.4));
+    ctx.lineTo(x2-9*Math.cos(a+0.4),y2-9*Math.sin(a+0.4));
+    ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+    ctx.fillStyle=color; ctx.font="italic 12px 'SF Mono',monospace";
+    ctx.fillText(label, x2+5, y2-3);
+  }
+
+  function reset(){ st.running=false; st.prog=0; st.lastTs=null; $("playBtn").textContent="▶ Empujar"; render(); }
+  function toggle(){
+    if(st.running){ st.running=false; $("playBtn").textContent="▶ Reanudar"; }
+    else { if(st.prog>=1) st.prog=0; st.running=true; st.lastTs=null; $("playBtn").textContent="❚❚ Pausar"; requestAnimationFrame(loop); }
+  }
+  function loop(ts){
+    if(!st.running) return;
+    if(st.lastTs===null) st.lastTs=ts;
+    st.prog += (ts-st.lastTs)/1000/2; st.lastTs=ts;
+    if(st.prog>=1){ st.prog=1; st.running=false; $("playBtn").textContent="▶ Empujar"; }
+    render(); if(st.running) requestAnimationFrame(loop);
+  }
+  $("playBtn").addEventListener("click",toggle);
+  $("resetBtn").addEventListener("click",reset);
+  sync();
+})();
+</script>
+</body>
+</html>

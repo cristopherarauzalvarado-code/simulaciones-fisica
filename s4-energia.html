@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Conservación de la Energía · Física I</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver al portafolio</a></div>
+
+  <header>
+    <h1>Conservación de la <span>Energía</span></h1>
+    <p>Semana 4 · Leyes de Conservación — la energía mecánica se transforma, no se pierde</p>
+  </header>
+
+  <section class="theory">
+    <div class="panel">
+      <h2>El concepto físico</h2>
+      <p>
+        Sin fricción, la <strong>energía mecánica total</strong> (cinética + potencial) de un cuerpo se
+        mantiene constante. Al bajar, la energía potencial se convierte en cinética (gana rapidez); al subir,
+        ocurre lo contrario. Esto permite conocer la velocidad en cualquier punto del recorrido sin resolver
+        las fuerzas.
+      </p>
+      <div class="formula">E = Ec + Ep = ½·m·v² + m·g·h = constante
+⇒  v = √( 2·g·(h₀ − h) )      ← rapidez a una altura h, soltado desde h₀
+<small>El carro nunca supera su altura inicial: no puede ganar energía «gratis».</small></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2 class="kicker">Parámetros</h2>
+      <div class="field">
+        <label>Altura de salida · h₀ <b id="lblH0">8.0 m</b></label>
+        <input type="range" id="H0" min="2" max="9.5" value="8" step="0.5" />
+      </div>
+      <div class="field">
+        <label>Masa del carro · m <b id="lblM">200 kg</b></label>
+        <input type="range" id="M" min="50" max="500" value="200" step="10" />
+      </div>
+      <div class="field">
+        <label>Velocidad de animación <b id="lblSpeed">1.0×</b></label>
+        <input type="range" id="speed" min="0.2" max="2" value="1" step="0.1" />
+      </div>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Soltar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>Altura h</span><b id="outH">0.0 m</b></div>
+        <div class="readout"><span>Rapidez v</span><b id="outV">0.0 m/s</b></div>
+        <div class="readout"><span>E. cinética</span><b id="outKE">0 J</b></div>
+        <div class="readout"><span>E. potencial</span><b id="outPE">0 J</b></div>
+      </div>
+      <div class="panel"><canvas id="stage" width="700" height="380"></canvas></div>
+    </section>
+  </div>
+
+  <section class="usecase">
+    <span class="badge">Uso en Ingeniería del Software</span>
+    <h2>Velocidad de un carro de montaña rusa en cada punto del riel</h2>
+    <p class="lead">
+      En juegos como <em>Planet Coaster</em> o el skate de <em>Tony Hawk</em>, un vehículo recorre un riel con
+      subidas y bajadas. Su velocidad en cada tramo se deriva de la energía, no se anima fotograma a fotograma.
+    </p>
+    <div class="uc-item">
+      <div class="n">i</div>
+      <div><h4>Caso específico</h4>
+      <p>Calcular la rapidez de un carro de montaña rusa en cada punto del recorrido a partir de la altura del
+      riel en ese punto, para animar el vagón y decidir si tiene impulso suficiente para coronar la siguiente
+      colina.</p></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">ii</div>
+      <div><h4>Concepto físico aplicado</h4>
+      <p>Conservación de la energía mecánica entre el punto de salida y el punto actual:</p>
+      <div class="formula">½·m·v² + m·g·h = ½·m·v₀² + m·g·h₀
+⇒  v = √( v₀² + 2·g·(h₀ − h) )</div></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">iii</div>
+      <div><h4>Justificación</h4>
+      <p>Scriptear la velocidad tramo a tramo sería frágil: cualquier cambio en la altura del riel obligaría a
+      reajustar todo a mano y podría violar la física (el carro «aceleraría» subiendo). Derivar <code>v</code>
+      de la energía garantiza que <strong>el vagón frene al subir, acelere al bajar y se detenga si no le
+      alcanza la energía</strong> para coronar una colina —resultado siempre coherente, para cualquier diseño
+      de pista, con una sola ecuación.</p></div>
+    </div>
+    <div class="tech"><span>Planet Coaster</span><span>Energía mecánica</span><span>Spline de riel</span><span>Animación procedural</span></div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const g = 9.81;
+  // Pista: valle suave definido por tramos (en metros). x ∈ [0,20]
+  function trackH(x){
+    // colina-valle-colina más baja: combinación de cosenos, altura 0..10
+    return 5 + 4.2*Math.cos(x*0.46) + 0.9*Math.cos(x*1.05);
+  }
+  const X_MIN=0, X_MAX=20;
+  const st = { h0:8, m:200, speed:1, x:0, v:0, dir:1, running:false, lastTs:null };
+  const stage=$("stage"), ctx=stage.getContext("2d");
+  const H0el=$("H0"),Mel=$("M"),Sel=$("speed");
+
+  // Encontrar x de salida donde trackH(x) ≈ h0 (lado izquierdo)
+  function startX(h0){
+    let best=X_MIN, bd=1e9;
+    for(let x=X_MIN;x<=X_MAX/2;x+=0.02){ const d=Math.abs(trackH(x)-h0); if(d<bd){bd=d;best=x;} }
+    return best;
+  }
+  function sync(){
+    st.m=+Mel.value; st.speed=+Sel.value;
+    const maxH=trackH(X_MIN);
+    st.h0=Math.min(+H0el.value, maxH);
+    $("lblH0").textContent=(+H0el.value).toFixed(1)+" m";
+    $("lblM").textContent=st.m+" kg"; $("lblSpeed").textContent=st.speed.toFixed(1)+"×";
+  }
+  [Mel,Sel].forEach(e=>e.addEventListener("input",sync));
+  H0el.addEventListener("input",()=>{sync(); reset();});
+
+  // Mapeo metros -> px
+  function toPx(xm,hm){
+    const W=stage.width,H=stage.height, padL=40,padR=20,padT=20,padB=40;
+    const px=padL+(xm-X_MIN)/(X_MAX-X_MIN)*(W-padL-padR);
+    const hMax=11, py=H-padB-(hm/hMax)*(H-padT-padB);
+    return [px,py];
+  }
+
+  function render(){
+    const W=stage.width,H=stage.height;
+    ctx.clearRect(0,0,W,H);
+    // Riel
+    ctx.strokeStyle="#475569"; ctx.lineWidth=4; ctx.beginPath();
+    for(let i=0;i<=200;i++){ const xm=X_MIN+(i/200)*(X_MAX-X_MIN); const p=toPx(xm,trackH(xm)); i?ctx.lineTo(p[0],p[1]):ctx.moveTo(p[0],p[1]); }
+    ctx.stroke();
+    // Línea de altura inicial
+    const ph=toPx(X_MIN,st.h0);
+    ctx.strokeStyle="rgba(251,191,36,0.4)"; ctx.setLineDash([5,4]);
+    ctx.beginPath(); ctx.moveTo(30,ph[1]); ctx.lineTo(W-20,ph[1]); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle="#fbbf24"; ctx.font="11px system-ui"; ctx.fillText("h₀ = "+st.h0.toFixed(1)+" m", 34, ph[1]-5);
+
+    // Carro
+    const hm=trackH(st.x), p=toPx(st.x,hm);
+    const grd=ctx.createRadialGradient(p[0]-3,p[1]-3,1,p[0],p[1]-8,14);
+    grd.addColorStop(0,"#86efac"); grd.addColorStop(1,"#16a34a");
+    ctx.beginPath(); ctx.arc(p[0],p[1]-9,11,0,Math.PI*2); ctx.fillStyle=grd; ctx.fill();
+
+    // Barras de energía (esquina superior derecha)
+    const v=st.v, KE=0.5*st.m*v*v, PE=st.m*g*hm, E=KE+PE;
+    drawBars(W-180,20,160,KE,PE,E);
+
+    $("outH").textContent=hm.toFixed(1)+" m";
+    $("outV").textContent=Math.abs(v).toFixed(1)+" m/s";
+    $("outKE").textContent=Math.round(KE).toLocaleString()+" J";
+    $("outPE").textContent=Math.round(PE).toLocaleString()+" J";
+  }
+  function drawBars(x,y,w,KE,PE,E){
+    const total=Math.max(E,1), barW=w, barH=16, gap=22;
+    const rows=[["Ec",KE,"#22c55e"],["Ep",PE,"#38bdf8"],["E total",E,"#a78bfa"]];
+    ctx.font="11px system-ui";
+    rows.forEach((r,i)=>{
+      const yy=y+i*gap;
+      ctx.fillStyle="#334155"; ctx.fillRect(x,yy,barW,barH);
+      ctx.fillStyle=r[2]; ctx.fillRect(x,yy,barW*(r[1]/total),barH);
+      ctx.fillStyle="#e2e8f0"; ctx.textAlign="left"; ctx.fillText(r[0], x, yy-2);
+    });
+  }
+
+  function reset(){
+    st.running=false; st.x=startX(st.h0); st.v=0; st.dir=1; st.lastTs=null;
+    $("playBtn").textContent="▶ Soltar"; render();
+  }
+  function toggle(){
+    if(st.running){ st.running=false; $("playBtn").textContent="▶ Reanudar"; }
+    else { st.running=true; st.lastTs=null; $("playBtn").textContent="❚❚ Pausar"; requestAnimationFrame(loop); }
+  }
+  function loop(ts){
+    if(!st.running) return;
+    if(st.lastTs===null) st.lastTs=ts;
+    let dt=Math.min((ts-st.lastTs)/1000,0.033)*st.speed; st.lastTs=ts;
+    const steps=6, h=dt/steps;
+    for(let i=0;i<steps;i++){
+      // pendiente del riel
+      const dx=0.01, slope=(trackH(st.x+dx)-trackH(st.x-dx))/(2*dx);
+      const theta=Math.atan(slope);
+      const aT=-g*Math.sin(theta);        // aceleración tangencial
+      st.v += aT*h;
+      st.x += st.v*Math.cos(theta)*h;      // avance horizontal
+      // rebote en los extremos
+      if(st.x<X_MIN){ st.x=X_MIN; st.v=-st.v*0.999; }
+      if(st.x>X_MAX){ st.x=X_MAX; st.v=-st.v*0.999; }
+    }
+    render(); if(st.running) requestAnimationFrame(loop);
+  }
+  $("playBtn").addEventListener("click",toggle);
+  $("resetBtn").addEventListener("click",reset);
+  sync(); reset();
+})();
+</script>
+</body>
+</html>

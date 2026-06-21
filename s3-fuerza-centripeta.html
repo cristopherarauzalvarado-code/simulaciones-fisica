@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Fuerza Centrípeta · Física I</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver al portafolio</a></div>
+
+  <header>
+    <h1>Fuerza <span>Centrípeta</span></h1>
+    <p>Semana 3 · Dinámica — la fuerza que mantiene a un cuerpo en su trayectoria circular</p>
+  </header>
+
+  <section class="theory">
+    <div class="panel">
+      <h2>El concepto físico</h2>
+      <p>
+        Para que un cuerpo describa un círculo necesita una fuerza neta dirigida <strong>hacia el centro</strong>:
+        la fuerza centrípeta. No es una fuerza nueva, es el <em>papel</em> que cumple otra fuerza real
+        (fricción, tensión, gravedad). Si esa fuerza no alcanza, el cuerpo sale despedido por la tangente.
+      </p>
+      <div class="formula">F_c = m·v² / r = m·ω²·r        ← requerida para girar
+F_fricción(máx) = μ·m·g           ← la que pueden dar los neumáticos
+<small>Hay giro estable mientras F_fricción(máx) ≥ F_c. Si v crece demasiado, F_c supera el límite y hay derrape.</small></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2 class="kicker">Parámetros del vehículo</h2>
+      <div class="field">
+        <label>Rapidez · v <b id="lblV">18 m/s</b></label>
+        <input type="range" id="V" min="4" max="40" value="18" step="1" />
+      </div>
+      <div class="field">
+        <label>Radio de la curva · r <b id="lblR">30 m</b></label>
+        <input type="range" id="R" min="10" max="60" value="30" step="1" />
+      </div>
+      <div class="field">
+        <label>Masa · m <b id="lblM">1200 kg</b></label>
+        <input type="range" id="M" min="600" max="2000" value="1200" step="50" />
+      </div>
+      <div class="field">
+        <label>Coef. de fricción · μ <b id="lblMu">0.80</b></label>
+        <input type="range" id="Mu" min="0.2" max="1.2" value="0.8" step="0.05" />
+        <div class="hint">Seco ≈ 0.8 · mojado ≈ 0.4 · hielo ≈ 0.1</div>
+      </div>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Conducir</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>F_c requerida</span><b id="outFc">0 N</b></div>
+        <div class="readout"><span>F_fricción máx</span><b id="outFf">0 N</b></div>
+        <div class="readout" id="rdState"><span>Estado</span><b id="outState">—</b></div>
+        <div class="readout"><span>v máx segura</span><b id="outVmax">0 m/s</b></div>
+      </div>
+      <div class="panel"><canvas id="stage" width="700" height="440"></canvas></div>
+    </section>
+  </div>
+
+  <section class="usecase">
+    <span class="badge">Uso en Ingeniería del Software</span>
+    <h2>Detección de derrape en un juego de carreras</h2>
+    <p class="lead">
+      En simuladores como <em>Forza</em> o <em>Gran Turismo</em>, el coche pierde agarre y derrapa si entras
+      demasiado rápido a una curva. Ese comportamiento no está scripteado: emerge de comparar fuerzas en cada
+      frame.
+    </p>
+    <div class="uc-item">
+      <div class="n">i</div>
+      <div><h4>Caso específico</h4>
+      <p>Cada frame, el motor calcula la fuerza centrípeta que la curva exige al coche y la compara con el
+      agarre máximo de los neumáticos para decidir si el coche sigue la curva o empieza a derrapar.</p></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">ii</div>
+      <div><h4>Concepto físico aplicado</h4>
+      <p>Segunda ley de Newton aplicada al movimiento circular, comparada con el límite de fricción:</p>
+      <div class="formula">si  m·v²/r > μ·m·g   →   DERRAPE
+⇒ velocidad segura máxima:  v_máx = √(μ·g·r)</div></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">iii</div>
+      <div><h4>Justificación</h4>
+      <p>Una regla fija del tipo «derrapa si vas a más de 100 km/h» sería falsa: depende del radio de la curva
+      y del agarre (lluvia, hielo). Usar <code>F_c = m·v²/r</code> hace que <strong>la misma curva sea fácil
+      despacio y traicionera rápido o con la pista mojada</strong>, generando física realista y reactiva con
+      una sola comparación, no con cientos de casos codificados a mano.</p></div>
+    </div>
+    <div class="tech"><span>Motor de físicas</span><span>Newton (ΣF = ma)</span><span>Modelo de neumático</span><span>Racing sim</span></div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const g = 9.81;
+  const st = { v:18, r:30, m:1200, mu:0.8, t:0, ang:0, skidT:0, running:false, lastTs:null };
+  const stage=$("stage"), ctx=stage.getContext("2d");
+  const Vel=$("V"),Rel=$("R"),Mel=$("M"),Muel=$("Mu");
+
+  const Fc = () => st.m*st.v*st.v/st.r;
+  const Ff = () => st.mu*st.m*g;
+  const skids = () => Fc() > Ff();
+
+  function sync(){
+    st.v=+Vel.value; st.r=+Rel.value; st.m=+Mel.value; st.mu=+Muel.value;
+    $("lblV").textContent=st.v+" m/s"; $("lblR").textContent=st.r+" m";
+    $("lblM").textContent=st.m+" kg"; $("lblMu").textContent=st.mu.toFixed(2);
+    $("outFc").textContent=Math.round(Fc()).toLocaleString()+" N";
+    $("outFf").textContent=Math.round(Ff()).toLocaleString()+" N";
+    $("outVmax").textContent=Math.sqrt(st.mu*g*st.r).toFixed(1)+" m/s";
+    const sk=skids();
+    $("outState").textContent = sk ? "DERRAPE" : "Estable";
+    $("rdState").className = "readout " + (sk ? "down" : "up");
+  }
+  [Vel,Rel,Mel,Muel].forEach(e=>e.addEventListener("input",()=>{sync();}));
+
+  function render(){
+    const W=stage.width,H=stage.height,cx=W/2,cy=H/2;
+    const Rpx = 4 + st.r*2.6;
+    ctx.clearRect(0,0,W,H);
+    // Pista (anillo)
+    ctx.strokeStyle="#334155"; ctx.lineWidth=34;
+    ctx.beginPath(); ctx.arc(cx,cy,Rpx,0,Math.PI*2); ctx.stroke();
+    ctx.strokeStyle="#475569"; ctx.lineWidth=2; ctx.setLineDash([10,12]);
+    ctx.beginPath(); ctx.arc(cx,cy,Rpx,0,Math.PI*2); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle="#64748b"; ctx.beginPath(); ctx.arc(cx,cy,4,0,Math.PI*2); ctx.fill();
+
+    const a=st.ang;
+    let px, py, sk=skids();
+    if(!sk){
+      px=cx+Rpx*Math.cos(a); py=cy+Rpx*Math.sin(a);
+      // Vector centrípeta hacia el centro
+      drawArrow(px,py,cx+ (px-cx)*0.55, cy+(py-cy)*0.55, "#fbbf24","F⃗c");
+    } else {
+      // Punto donde empezó a derrapar + escape tangente
+      const a0=a-st.skidT*1.4;
+      const bx=cx+Rpx*Math.cos(a0), by=cy+Rpx*Math.sin(a0);
+      const tx=-Math.sin(a0), ty=Math.cos(a0); // tangente
+      const d=st.skidT*120;
+      px=bx+tx*d; py=by+ty*d;
+      // marca de derrape
+      ctx.strokeStyle="rgba(248,113,113,0.5)"; ctx.lineWidth=3; ctx.setLineDash([6,6]);
+      ctx.beginPath(); ctx.moveTo(bx,by); ctx.lineTo(px,py); ctx.stroke(); ctx.setLineDash([]);
+    }
+    // Coche (rectángulo orientado)
+    const heading = sk ? Math.atan2((-Math.sin(a)), Math.cos(a)) : a+Math.PI/2;
+    ctx.save(); ctx.translate(px,py); ctx.rotate(heading);
+    ctx.fillStyle = sk ? "#f87171" : "#38bdf8";
+    ctx.fillRect(-9,-15,18,30);
+    ctx.fillStyle="#0f172a"; ctx.fillRect(-6,-9,12,8);
+    ctx.restore();
+
+    if(sk){
+      ctx.fillStyle="#f87171"; ctx.font="bold 20px system-ui"; ctx.textAlign="center";
+      ctx.fillText("¡DERRAPE!", cx, cy-8);
+      ctx.font="12px system-ui"; ctx.fillStyle="#fca5a5";
+      ctx.fillText("F_c supera la fricción → sale por la tangente", cx, cy+14);
+    }
+    ctx.textAlign="left";
+  }
+  function drawArrow(x1,y1,x2,y2,color,label){
+    ctx.strokeStyle=color; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+    const ang=Math.atan2(y2-y1,x2-x1);
+    ctx.beginPath(); ctx.moveTo(x2,y2);
+    ctx.lineTo(x2-10*Math.cos(ang-0.4), y2-10*Math.sin(ang-0.4));
+    ctx.lineTo(x2-10*Math.cos(ang+0.4), y2-10*Math.sin(ang+0.4));
+    ctx.closePath(); ctx.fillStyle=color; ctx.fill();
+    ctx.fillStyle=color; ctx.font="italic 13px 'SF Mono',monospace";
+    ctx.fillText(label, x2+4, y2);
+  }
+
+  function reset(){ st.running=false; st.ang=-Math.PI/2; st.skidT=0; st.lastTs=null; $("playBtn").textContent="▶ Conducir"; render(); }
+  function toggle(){
+    if(st.running){ st.running=false; $("playBtn").textContent="▶ Reanudar"; }
+    else { st.running=true; st.lastTs=null; $("playBtn").textContent="❚❚ Pausar"; requestAnimationFrame(loop); }
+  }
+  function loop(ts){
+    if(!st.running) return;
+    if(st.lastTs===null) st.lastTs=ts;
+    const dt=(ts-st.lastTs)/1000; st.lastTs=ts;
+    const omega = st.v/st.r;
+    st.ang += omega*dt;
+    if(skids()) st.skidT += dt; else st.skidT=0;
+    if(st.skidT>1.6){ st.skidT=0; st.ang=-Math.PI/2; } // reaparece
+    render(); if(st.running) requestAnimationFrame(loop);
+  }
+  $("playBtn").addEventListener("click",toggle);
+  $("resetBtn").addEventListener("click",reset);
+  sync(); reset();
+})();
+</script>
+</body>
+</html>

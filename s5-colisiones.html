@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Colisiones Inelásticas · Física I</title>
+<link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+  <div class="topbar"><a href="index.html">← Volver al portafolio</a></div>
+
+  <header>
+    <h1>Colisiones <span>Inelásticas</span></h1>
+    <p>Semana 5 · Leyes de Conservación — los cuerpos chocan y quedan unidos</p>
+  </header>
+
+  <section class="theory">
+    <div class="panel">
+      <h2>El concepto físico</h2>
+      <p>
+        En una colisión <strong>perfectamente inelástica</strong> los cuerpos quedan pegados y se mueven
+        juntos tras el choque. El <strong>momento lineal total siempre se conserva</strong>, pero parte de la
+        <strong>energía cinética se pierde</strong> (se transforma en calor, sonido y deformación).
+      </p>
+      <div class="formula">m₁·v₁ + m₂·v₂ = (m₁ + m₂)·v′      ← momento conservado
+⇒  v′ = (m₁·v₁ + m₂·v₂) / (m₁ + m₂)
+<small>La energía cinética después (½(m₁+m₂)v′²) es menor que antes: la diferencia se disipa.</small></div>
+    </div>
+  </section>
+
+  <div class="layout">
+    <aside class="panel">
+      <h2 class="kicker">Carro 1 (azul)</h2>
+      <div class="field">
+        <label>Masa · m₁ <b id="lblM1">2.0 kg</b></label>
+        <input type="range" id="M1" min="0.5" max="6" value="2" step="0.5" />
+      </div>
+      <div class="field">
+        <label>Velocidad · v₁ <b id="lblV1">3.0 m/s</b></label>
+        <input type="range" id="V1" min="0" max="6" value="3" step="0.5" />
+      </div>
+      <h2 class="kicker" style="margin-top:8px;">Carro 2 (rojo)</h2>
+      <div class="field">
+        <label>Masa · m₂ <b id="lblM2">3.0 kg</b></label>
+        <input type="range" id="M2" min="0.5" max="6" value="3" step="0.5" />
+      </div>
+      <div class="field">
+        <label>Velocidad · v₂ <b id="lblV2">-1.0 m/s</b></label>
+        <input type="range" id="V2" min="-6" max="0" value="-1" step="0.5" />
+        <div class="hint">Negativa = se mueve hacia la izquierda (al encuentro).</div>
+      </div>
+      <div class="buttons">
+        <button class="btn-play" id="playBtn">▶ Lanzar</button>
+        <button class="btn-reset" id="resetBtn">↺ Reiniciar</button>
+      </div>
+    </aside>
+
+    <section class="stage-wrap">
+      <div class="readouts">
+        <div class="readout"><span>Momento antes</span><b id="outPb">0</b></div>
+        <div class="readout"><span>Momento después</span><b id="outPa">0</b></div>
+        <div class="readout"><span>v′ (juntos)</span><b id="outVp">0 m/s</b></div>
+        <div class="readout" id="rdLoss"><span>Energía perdida</span><b id="outLoss">0%</b></div>
+      </div>
+      <div class="panel"><canvas id="stage" width="700" height="300"></canvas></div>
+    </section>
+  </div>
+
+  <section class="usecase">
+    <span class="badge">Uso en Ingeniería del Software</span>
+    <h2>Dos asteroides que chocan y se fusionan en un motor 2D</h2>
+    <p class="lead">
+      En un juego espacial 2D (al estilo <em>Asteroids</em> con física realista, usando <em>Box2D</em>), dos
+      asteroides pueden chocar y quedar unidos formando uno mayor. El motor calcula la velocidad resultante
+      conservando el momento.
+    </p>
+    <div class="uc-item">
+      <div class="n">i</div>
+      <div><h4>Caso específico</h4>
+      <p>Al detectar la colisión de dos asteroides que deben fusionarse, el motor crea un cuerpo único cuya
+      masa es la suma y cuya velocidad se obtiene del momento combinado de ambos.</p></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">ii</div>
+      <div><h4>Concepto físico aplicado</h4>
+      <p>Conservación del momento lineal en colisión perfectamente inelástica (en 2D, por componentes):</p>
+      <div class="formula">v⃗′ = (m₁·v⃗₁ + m₂·v⃗₂) / (m₁ + m₂)</div></div>
+    </div>
+    <div class="uc-item">
+      <div class="n">iii</div>
+      <div><h4>Justificación</h4>
+      <p>Inventar la velocidad resultante (p. ej. promediarla o fijarla a cero) produciría saltos visibles y
+      objetos que ganan o pierden movimiento de la nada. Usar la conservación del momento garantiza una
+      transición <strong>físicamente consistente para cualquier masa y dirección</strong>: un asteroide pesado
+      apenas se desvía al tragarse uno pequeño, y el sistema nunca crea movimiento gratis —credibilidad con una
+      única fórmula vectorial reutilizable.</p></div>
+    </div>
+    <div class="tech"><span>Box2D / Matter.js</span><span>Conservación del momento</span><span>onCollision</span><span>Física 2D</span></div>
+  </section>
+
+<script>
+(() => {
+  "use strict";
+  const $ = id => document.getElementById(id);
+  const st = { m1:2,v1:3,m2:3,v2:-1, x1:0,x2:0, cv1:0,cv2:0, stuck:false, vp:0, running:false, lastTs:null };
+  const stage=$("stage"), ctx=stage.getContext("2d");
+  const M1=$("M1"),V1=$("V1"),M2=$("M2"),V2=$("V2");
+
+  const sizeOf = m => 26 + m*9;
+  const pBefore = () => st.m1*st.v1 + st.m2*st.v2;
+  const keBefore = () => 0.5*st.m1*st.v1*st.v1 + 0.5*st.m2*st.v2*st.v2;
+  const vPrime = () => (st.m1*st.v1 + st.m2*st.v2)/(st.m1+st.m2);
+
+  function sync(){
+    st.m1=+M1.value; st.v1=+V1.value; st.m2=+M2.value; st.v2=+V2.value;
+    $("lblM1").textContent=st.m1.toFixed(1)+" kg"; $("lblV1").textContent=st.v1.toFixed(1)+" m/s";
+    $("lblM2").textContent=st.m2.toFixed(1)+" kg"; $("lblV2").textContent=st.v2.toFixed(1)+" m/s";
+    const vp=vPrime(), keA=0.5*(st.m1+st.m2)*vp*vp, keB=keBefore();
+    const loss = keB>0 ? (1-keA/keB)*100 : 0;
+    $("outPb").textContent=pBefore().toFixed(1)+" kg·m/s";
+    $("outPa").textContent=((st.m1+st.m2)*vp).toFixed(1)+" kg·m/s";
+    $("outVp").textContent=vp.toFixed(2)+" m/s";
+    $("outLoss").textContent=loss.toFixed(0)+"%";
+    $("rdLoss").className="readout "+(loss>1?"down":"");
+  }
+  [M1,V1,M2,V2].forEach(e=>e.addEventListener("input",()=>{sync(); reset();}));
+
+  const PXM=42;
+  function render(){
+    const W=stage.width,H=stage.height, gy=H-70;
+    ctx.clearRect(0,0,W,H);
+    // Riel
+    ctx.strokeStyle="#475569"; ctx.lineWidth=3;
+    ctx.beginPath(); ctx.moveTo(20,gy); ctx.lineTo(W-20,gy); ctx.stroke();
+
+    const s1=sizeOf(st.m1), s2=sizeOf(st.m2);
+    const cx=W/2;
+    const px1=cx+st.x1*PXM, px2=cx+st.x2*PXM;
+    drawCart(px1, gy, s1, "#38bdf8", "1", st.stuck?st.vp:st.cv1, st.m1);
+    drawCart(px2, gy, s2, "#f87171", "2", st.stuck?st.vp:st.cv2, st.m2);
+
+    if(st.stuck){
+      ctx.fillStyle="#fbbf24"; ctx.font="bold 14px system-ui"; ctx.textAlign="center";
+      ctx.fillText("¡Unidos! se mueven juntos a v′ = "+st.vp.toFixed(2)+" m/s", cx, 30);
+      ctx.textAlign="left";
+    }
+  }
+  function drawCart(x,gy,s,color,label,v,m){
+    const y=gy-s;
+    ctx.fillStyle=color; ctx.fillRect(x-s/2,y,s,s);
+    ctx.fillStyle="#0f172a"; ctx.beginPath(); ctx.arc(x-s/4,gy,5,0,Math.PI*2); ctx.arc(x+s/4,gy,5,0,Math.PI*2); ctx.fill();
+    ctx.fillStyle="#fff"; ctx.font="bold 13px system-ui"; ctx.textAlign="center";
+    ctx.fillText(label, x, y+s/2+5);
+    ctx.fillStyle="#cbd5e1"; ctx.font="10px system-ui"; ctx.fillText(m.toFixed(1)+" kg", x, y-16);
+    // flecha de velocidad
+    if(Math.abs(v)>0.05){
+      const dir=Math.sign(v), len=Math.min(Math.abs(v)*12,48);
+      ctx.strokeStyle="#e2e8f0"; ctx.lineWidth=2;
+      ctx.beginPath(); ctx.moveTo(x, y-6); ctx.lineTo(x+dir*len, y-6); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(x+dir*len,y-6);
+      ctx.lineTo(x+dir*len-dir*6,y-10); ctx.lineTo(x+dir*len-dir*6,y-2); ctx.closePath();
+      ctx.fillStyle="#e2e8f0"; ctx.fill();
+    }
+    ctx.textAlign="left";
+  }
+
+  function reset(){
+    st.running=false; st.stuck=false; st.lastTs=null;
+    st.cv1=st.v1; st.cv2=st.v2; st.vp=vPrime();
+    st.x1=-4.5; st.x2=4.5;
+    $("playBtn").textContent="▶ Lanzar"; render();
+  }
+  function toggle(){
+    if(st.running){ st.running=false; $("playBtn").textContent="▶ Reanudar"; }
+    else { st.running=true; st.lastTs=null; $("playBtn").textContent="❚❚ Pausar"; requestAnimationFrame(loop); }
+  }
+  function loop(ts){
+    if(!st.running) return;
+    if(st.lastTs===null) st.lastTs=ts;
+    let dt=Math.min((ts-st.lastTs)/1000,0.033); st.lastTs=ts;
+    if(!st.stuck){
+      st.x1 += st.cv1*dt; st.x2 += st.cv2*dt;
+      // detección de contacto (en metros): bordes interiores
+      const half1=sizeOf(st.m1)/2/PXM, half2=sizeOf(st.m2)/2/PXM;
+      if(st.x1+half1 >= st.x2-half2){
+        st.stuck=true; st.vp=vPrime();
+        // alinear pegados
+        const mid=(st.x1+st.x2)/2;
+        st.x1=mid-half1; st.x2=mid+half2;
+      }
+    } else {
+      st.x1 += st.vp*dt; st.x2 += st.vp*dt;
+      if(st.x1<-9 || st.x2>9){ st.running=false; $("playBtn").textContent="↺ Reiniciar"; }
+    }
+    render(); if(st.running) requestAnimationFrame(loop);
+  }
+  $("playBtn").addEventListener("click",()=>{ if(!st.running && st.stuck) reset(); toggle(); });
+  $("resetBtn").addEventListener("click",reset);
+  sync(); reset();
+})();
+</script>
+</body>
+</html>
